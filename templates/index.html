@@ -1,210 +1,156 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Интерактивная карта ВУЗов России</title>
-  
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-
-  <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
-    body, html {
-      width: 100%;
-      height: 100%;
-      background: radial-gradient(circle at center, #0d2847 0%, #050d1a 100%);
-      font-family: Arial, sans-serif;
-      overflow: hidden;
-    }
-
-    #map {
-      width: 100vw;
-      height: 100vh;
-      background: transparent;
-    }
-
-    /* Неоновые маркеры городов */
-    .glow-marker-city {
-      background: #00f0ff;
-      border-radius: 50%;
-      box-shadow: 0 0 8px #00f0ff, 0 0 15px #00f0ff, 0 0 25px #00f0ff;
-      border: 2px solid #ffffff;
-      cursor: pointer;
-      transition: transform 0.2s ease;
-    }
-
-    .glow-marker-city:hover {
-      transform: scale(1.3);
-    }
-
-    .glow-marker-vuz {
-      background: #ff0055;
-      border-radius: 50%;
-      box-shadow: 0 0 8px #ff0055, 0 0 15px #ff0055;
-      border: 2px solid #ffffff;
-      cursor: pointer;
-    }
-
-    /* Кнопка сброса */
-    #reset-btn {
-      position: absolute;
-      top: 20px;
-      right: 20px;
-      z-index: 1000;
-      padding: 10px 20px;
-      background: rgba(0, 150, 255, 0.2);
-      color: #00f0ff;
-      border: 1px solid #00f0ff;
-      border-radius: 20px;
-      font-weight: bold;
-      cursor: pointer;
-      backdrop-filter: blur(5px);
-      transition: all 0.3s ease;
-    }
-
-    #reset-btn:hover {
-      background: #00f0ff;
-      color: #000;
-      box-shadow: 0 0 15px #00f0ff;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Поиск ВУЗов России</title>
+    <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
 
-  <button id="reset-btn">Вернуться к карте России</button>
-  <div id="map"></div>
+    <header class="app-header">
+        <div class="brand">
+            <div class="brand-icon">🎓</div>
+            <div class="brand-title">
+                <h1>Поиск ВУЗов России</h1>
+                <p>MAX Mini App — Нажмите на город или регион</p>
+            </div>
+        </div>
 
-  <!-- Leaflet JS -->
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+        <div id="region-indicator" class="region-indicator">
+            <span class="icon">📍</span>
+            <span id="region-name-text">Наведите на регион карты</span>
+        </div>
+    </header>
 
-  <!-- Подключаем карту России как JS-переменную, что полностью обходит блокировки file:// и CORS -->
-  <script src="https://cdn.jsdelivr.net/gh/codeforgermany/click_that_hood@main/public/data/russia.geojson" type="text/javascript"></script>
+    <main class="main-container">
+        <!-- Боковая панель ВУЗов -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2 id="selected-region-title" class="sidebar-title">Выберите регион</h2>
+                <p id="selected-city-text" class="sidebar-subtitle">Кликните по карте для загрузки ВУЗов</p>
+            </div>
 
-  <script>
-    // 1. Инициализация Leaflet с полным отключением ручного масштабирования и drag-активности
-    const map = L.map('map', {
-      center: [62, 95],
-      zoom: 3,
-      minZoom: 3,
-      maxZoom: 12,
-      zoomControl: false,
-      attributionControl: false,
-      scrollWheelZoom: false,
-      doubleClickZoom: false,
-      touchZoom: false,
-      dragging: false,
-      boxZoom: false,
-      keyboard: false,
-      preferCanvas: true // Рендеринг на Canvas убирает задержки и толстые линии
-    });
+            <div id="universities-container" class="universities-list">
+                <div class="empty-state">
+                    <div class="empty-state-icon">🗺️</div>
+                    <p>Нажмите на любой регион или город на карте, чтобы увидеть ВУЗы и проходные баллы.</p>
+                </div>
+            </div>
+        </aside>
 
-    const citiesLayer = L.layerGroup().addTo(map);
-    const vuzLayer = L.layerGroup().addTo(map);
+        <!-- Карта России -->
+        <section class="map-wrapper">
+            <svg id="russia-map" class="svg-map-container" viewBox="0 0 1000 550" xmlns="http://www.w3.org/2000/svg">
+                <g id="regions-group">
+                    <path class="region-path" id="RU-KGD" data-name="Калининградская область" data-city="Калининград" d="M 40 180 L 60 175 L 70 190 L 50 200 Z"/>
+                    <path class="region-path" id="RU-SPE" data-name="Санкт-Петербург & Ленинградская обл." data-city="Санкт-Петербург" d="M 170 110 L 210 100 L 220 130 L 180 140 Z"/>
+                    <path class="region-path" id="RU-MOW" data-name="Москва & Московская область" data-city="Москва" d="M 180 170 L 220 165 L 225 195 L 185 200 Z"/>
+                    <path class="region-path" id="RU-KDA" data-name="Краснодарский край" data-city="Краснодар" d="M 100 270 L 135 260 L 145 295 L 110 305 Z"/>
+                    <path class="region-path" id="RU-TAT" data-name="Республика Татарстан" data-city="Казань" d="M 230 190 L 270 185 L 275 220 L 235 225 Z"/>
+                    <path class="region-path" id="RU-SVE" data-name="Свердловская область" data-city="Екатеринбург" d="M 325 170 L 375 160 L 380 215 L 330 220 Z"/>
+                    <path class="region-path" id="RU-NVR" data-name="Новосибирская область" data-city="Новосибирск" d="M 465 215 L 515 210 L 520 255 L 470 260 Z"/>
+                    <path class="region-path" id="RU-KYA" data-name="Красноярский край" data-city="Красноярск" d="M 535 50 L 640 40 L 650 280 L 540 285 Z"/>
+                    <path class="region-path" id="RU-PRI" data-name="Приморский край" data-city="Владивосток" d="M 845 295 L 885 290 L 890 360 L 850 365 Z"/>
+                </g>
 
-    // 2. Стиль регионов
-    const regionStyle = {
-      fillColor: '#1a4971',
-      weight: 1,
-      opacity: 0.9,
-      color: '#00d2ff',
-      fillOpacity: 0.45,
-      smoothFactor: 1.5
-    };
+                <g id="cities-group">
+                    <circle class="city-marker" data-region="RU-MOW" cx="205" cy="180" r="5" />
+                    <text class="city-label" x="180" y="170">Москва</text>
 
-    const highlightStyle = {
-      fillColor: '#00aaff',
-      weight: 1.5,
-      color: '#ffffff',
-      fillOpacity: 0.7
-    };
+                    <circle class="city-marker" data-region="RU-SPE" cx="195" cy="120" r="5" />
+                    <text class="city-label" x="145" y="115">СПб</text>
 
-    // 3. Загрузка геоданных России с гарантированным фаллбэком
-    const russiaGeoJSON = {
-      "type": "FeatureCollection",
-      "features": [
-        {
-          "type": "Feature",
-          "properties": {"name": "Российская Федерация"},
-          "geometry": {
-            "type": "MultiPolygon",
-            "coordinates": [
-              /* Вшитый гео-контур регионов России */
-              [[[33.5, 44.5], [34.5, 45.3], [36.5, 45.3], [36.6, 45.1], [35.1, 44.6], [33.5, 44.5]]], // Крым
-              [[[20.0, 54.3], [22.8, 54.3], [22.8, 55.3], [20.6, 55.3], [20.0, 54.3]]], // Калининград
-              [[[28.0, 59.5], [30.0, 60.0], [32.0, 60.5], [30.0, 61.8], [33.0, 65.0], [40.0, 67.0], [42.0, 66.0], [40.0, 64.5], [47.0, 62.0], [53.0, 68.0], [59.0, 68.5], [68.0, 73.0], [74.0, 72.0], [76.0, 73.0], [80.0, 73.5], [86.0, 73.5], [98.0, 76.0], [106.0, 77.5], [114.0, 73.0], [140.0, 72.0], [160.0, 70.0], [180.0, 68.0], [170.0, 64.0], [160.0, 56.0], [156.0, 51.0], [143.0, 53.0], [135.0, 48.0], [131.0, 43.0], [132.0, 43.0], [136.0, 45.5], [140.0, 47.0], [142.0, 53.5], [137.0, 54.5], [140.0, 57.0], [160.0, 59.0], [164.0, 62.0], [173.0, 64.0], [180.0, 65.0], [170.0, 69.0], [100.0, 78.0], [70.0, 73.0], [58.0, 69.0], [48.0, 68.0], [44.0, 68.5], [38.0, 69.8], [32.0, 69.8], [28.0, 69.0], [29.0, 61.0], [28.0, 58.0], [31.0, 56.0], [32.0, 52.0], [38.0, 50.0], [40.0, 47.0], [47.0, 46.0], [48.0, 43.0], [46.0, 42.0], [48.0, 41.5], [50.0, 41.8], [47.0, 45.0], [50.0, 51.0], [55.0, 54.0], [60.0, 54.5], [65.0, 54.0], [70.0, 55.0], [77.0, 53.5], [83.0, 51.0], [88.0, 50.0], [89.0, 53.0], [95.0, 51.5], [100.0, 52.0], [106.0, 50.0], [112.0, 49.0], [120.0, 53.0], [131.0, 50.0], [134.0, 48.0], [131.0, 45.0], [131.0, 43.0]]]
-            ]
-          }
-        }
-      ]
-    };
+                    <circle class="city-marker" data-region="RU-TAT" cx="250" cy="205" r="4.5" />
+                    <text class="city-label" x="255" y="205">Казань</text>
 
-    // Отрисовка встроенных геоданных
-    const geoJsonLayer = L.geoJSON(window.russiaData || russiaGeoJSON, {
-      style: regionStyle,
-      onEachFeature: (feature, layer) => {
-        layer.on({
-          mouseover: (e) => e.target.setStyle(highlightStyle),
-          mouseout: (e) => e.target.setStyle(regionStyle)
-        });
-      }
-    }).addTo(map);
+                    <circle class="city-marker" data-region="RU-SVE" cx="350" cy="190" r="4.5" />
+                    <text class="city-label" x="355" y="190">Екатеринбург</text>
 
-    // Дополнительная загрузка высокодетализированной сетки регионов при наличии сети
-    fetch('https://raw.githubusercontent.com/codeforgermany/click_that_hood/main/public/data/russia.geojson')
-      .then(res => res.json())
-      .then(data => {
-        map.removeLayer(geoJsonLayer);
-        L.geoJSON(data, {
-          style: regionStyle,
-          onEachFeature: (feature, layer) => {
-            layer.on({
-              mouseover: (e) => e.target.setStyle(highlightStyle),
-              mouseout: (e) => e.target.setStyle(regionStyle)
+                    <circle class="city-marker" data-region="RU-NVR" cx="490" cy="235" r="4.5" />
+                    <text class="city-label" x="495" y="235">Новосибирск</text>
+                </g>
+            </svg>
+        </section>
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const regionPaths = document.querySelectorAll('.region-path');
+            const cityMarkers = document.querySelectorAll('.city-marker');
+            const regionIndicatorText = document.getElementById('region-name-text');
+            const selectedRegionTitle = document.getElementById('selected-region-title');
+            const selectedCityText = document.getElementById('selected-city-text');
+            const universitiesContainer = document.getElementById('universities-container');
+
+            let activePath = null;
+
+            regionPaths.forEach(path => {
+                path.addEventListener('mouseenter', () => {
+                    const name = path.getAttribute('data-name');
+                    const city = path.getAttribute('data-city');
+                    regionIndicatorText.textContent = `${name} (Центр: ${city})`;
+                });
+
+                path.addEventListener('mouseleave', () => {
+                    if (!activePath) {
+                        regionIndicatorText.textContent = 'Наведите на регион карты';
+                    } else {
+                        regionIndicatorText.textContent = `Выбран: ${activePath.getAttribute('data-name')}`;
+                    }
+                });
+
+                path.addEventListener('click', () => {
+                    if (activePath) activePath.classList.remove('active');
+                    path.classList.add('active');
+                    activePath = path;
+
+                    loadUniversities(path.id, path.getAttribute('data-name'), path.getAttribute('data-city'));
+                });
             });
-          }
-        }).addTo(map);
-      })
-      .catch(() => {});
 
-    // 4. Маркеры
-    const cityIcon = L.divIcon({ className: 'glow-marker-city', iconSize: [14, 14] });
-    const vuzIcon = L.divIcon({ className: 'glow-marker-vuz', iconSize: [10, 10] });
+            cityMarkers.forEach(marker => {
+                marker.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const path = document.getElementById(marker.getAttribute('data-region'));
+                    if (path) path.dispatchEvent(new Event('click'));
+                });
+            });
 
-    function initCityMarkers() {
-      const moscow = L.marker([55.7558, 37.6173], { icon: cityIcon });
-      moscow.bindTooltip("Москва", { permanent: false, direction: 'top' });
+            async function loadUniversities(code, name, city) {
+                selectedRegionTitle.textContent = name;
+                selectedCityText.textContent = `Главные ВУЗы г. ${city}`;
+                universitiesContainer.innerHTML = '<div class="empty-state"><p>Загрузка ВУЗов...</p></div>';
 
-      moscow.on('click', () => {
-        map.flyTo([55.7558, 37.6173], 10, {
-          duration: 1.2,
-          easeLinearity: 0.25
+                try {
+                    const res = await fetch(`/api/universities/${code}`);
+                    const data = await res.json();
+                    renderUniversities(data.universities);
+                } catch {
+                    universitiesContainer.innerHTML = '<div class="empty-state"><p>Ошибка загрузки</p></div>';
+                }
+            }
+
+            function renderUniversities(unis) {
+                universitiesContainer.innerHTML = unis.map(uni => `
+                    <div class="uni-card">
+                        <span class="uni-badge">${uni.badge}</span>
+                        <h3 class="uni-name">${uni.name}</h3>
+                        <div class="uni-stats">
+                            <div class="stat-item">
+                                <span class="stat-label">Мест</span>
+                                <span class="stat-value">${uni.budget_places}</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Мин. балл</span>
+                                <span class="stat-value">${uni.min_score}</span>
+                            </div>
+                        </div>
+                        <a href="${uni.site}" target="_blank" class="uni-link">Перейти на сайт →</a>
+                    </div>
+                `).join('');
+            }
         });
-        
-        vuzLayer.clearLayers();
-        
-        L.marker([55.7028, 37.5308], { icon: vuzIcon }).bindPopup("<b>МГУ им. Ломоносова</b>").addTo(vuzLayer);
-        L.marker([55.7660, 37.6844], { icon: vuzIcon }).bindPopup("<b>МГТУ им. Баумана</b>").addTo(vuzLayer);
-        L.marker([55.7539, 37.6489], { icon: vuzIcon }).bindPopup("<b>ВШЭ</b>").addTo(vuzLayer);
-      });
-
-      citiesLayer.addLayer(moscow);
-    }
-
-    initCityMarkers();
-
-    // 5. Возврат к масштабу всей страны
-    document.getElementById('reset-btn').addEventListener('click', () => {
-      map.flyTo([62, 95], 3, {
-        duration: 1.2,
-        easeLinearity: 0.25
-      });
-      vuzLayer.clearLayers();
-    });
-  </script>
+    </script>
 </body>
 </html>
