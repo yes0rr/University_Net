@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Поиск ВУЗов</title>
+    <!-- Подключение внешнего стилистического файла -->
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="app-container">
+        <header class="header-card">
+            <div class="icon">🎓</div>
+            <h1>Поиск ВУЗов</h1>
+            <p>Наведите курсор на регион, чтобы начать поиск.</p>
+        </header>
+        <main class="map-container">
+            <svg viewBox="0 0 1000 600" xmlns="http://www.w3.org/2000/svg">
+                <g transform="scale(0.8)">
+                    <path id="RU-MOS" d="M 100,100 L 150,100 L 150,150 L 100,150 Z" title="Москва"/>
+                    <path id="RU-SPE" d="M 200,100 L 250,100 L 250,150 L 200,150 Z" title="Санкт-Петербург"/>
+                    <path id="RU-SVE" d="M 300,100 L 350,100 L 350,150 L 300,150 Z" title="Свердловская обл."/>
+                </g>
+            </svg>
+        </main>
+    </div>
+</body>
+</html>
