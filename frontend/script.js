@@ -1,313 +1,496 @@
+let isZoomed = false;
+let selectedCity = null;
+let currentUser = null;
 
-    document.addEventListener("DOMContentLoaded", () => {
-        const svg = document.getElementById("russia-map");
-        // Сохраняем исходные координаты viewBox карты для сброса
-        const initialViewBox = svg.getAttribute("viewBox") || "0 0 1000 600";
+// Соответствие городов субъектам РФ для масштабирования к региону
+const CITY_TO_REGION = {
+    "Владивосток": "Приморский край",
+    "Хабаровск": "Хабаровский край",
+    "Иркутск": "Иркутская область",
+    "Магадан": "Магаданская область",
+    "Анадырь": "Чукотский автономный округ",
+    "Петропавловск-Камчатский": "Камчатский край",
+    "Южно-Сахалинск": "Сахалинская область",
+    "Якутск": "Республика Саха (Якутия)",
+    "Улан-Удэ": "Республика Бурятия",
+    "Кызыл": "Республика Тыва",
+    "Красноярск": "Красноярский край",
+    "Абакан": "Республика Хакасия",
+    "Томск": "Томская область",
+    "Горно-Алтайск": "Республика Алтай",
+    "Барнаул": "Алтайский край",
+    "Кемерово": "Кемеровская область",
+    "Новосибирск": "Новосибирская область",
+    "Омск": "Омская область",
+    "Тюмень": "Тюменская область",
+    "Курган": "Курганская область",
+    "Челябинск": "Челябинская область",
+    "Екатеринбург": "Свердловская область",
+    "Ханты-Мансийск": "Ханты-Мансийский АО — Югра",
+    "Салехард": "Ямало-Ненецкий автономный округ",
+    "Нарьян-Мар": "Ненецкий автономный округ",
+    "Сыктывкар": "Республика Коми",
+    "Киров": "Кировская область",
+    "Пермь": "Пермский край",
+    "Уфа": "Республика Башкортостан",
+    "Оренбург": "Оренбургская область",
+    "Самара": "Самарская область",
+    "Ижевск": "Удмуртская Республика",
+    "Ульяновск": "Ульяновская область",
+    "Казань": "Республика Татарстан",
+    "Архангельск": "Архангельская область",
+    "Мурманск": "Мурманская область",
+    "Санкт-Петербург": "Санкт-Петербург",
+    "Петрозаводск": "Республика Карелия",
+    "Чита": "Забайкальский край",
+    "Благовещенск": "Амурская область",
+    "Биробиджан": "Еврейская автономная область",
+    "Калининград": "Калининградская область",
+    "Великий Новгород": "Новгородская область",
+    "Псков": "Псковская область",
+    "Вологда": "Вологодская область",
+    "Кострома": "Костромская область",
+    "Иваново": "Ивановская область",
+    "Ярославль": "Ярославская область",
+    "Тверь": "Тверская область",
+    "Смоленск": "Смоленская область",
+    "Владимир": "Владимирская область",
+    "Белгород": "Белгородская область",
+    "Воронеж": "Воронежская область",
+    "Тамбов": "Тамбовская область",
+    "Липецк": "Липецкая область",
+    "Рязань": "Рязанская область",
+    "Тула": "Тульская область",
+    "Орел": "Орловская область",
+    "Курск": "Курская область",
+    "Брянск": "Брянская область",
+    "Калуга": "Калужская область",
+    "Москва": "Москва",
+    "Нижний Новгород": "Нижегородская область",
+    "Йошкар-Ола": "Республика Марий Эл",
+    "Чебоксары": "Чувашская Республика",
+    "Саранск": "Республика Мордовия",
+    "Пенза": "Пензенская область",
+    "Саратов": "Саратовская область",
+    "Волгоград": "Волгоградская область",
+    "Астрахань": "Астраханская область",
+    "Элиста": "Республика Калмыкия",
+    "Луганск": "Луганская Народная Республика",
+    "Донецк": "Донецкая Народная Республика",
+    "Мелитополь": "Запорожская область",
+    "Геническ": "Херсонская область",
+    "Симферополь": "Республика Крым",
+    "Севастополь": "Республика Крым",
+    "Ростов-на-Дону": "Ростовская область",
+    "Краснодар": "Краснодарский край",
+    "Майкоп": "Республика Адыгея",
+    "Ставрополь": "Ставропольский край",
+    "Черкесск": "Карачаево-Черкесская Республика",
+    "Нальчик": "Кабардино-Балкарская Республика",
+    "Владикавказ": "Республика Северная Осетия — Алания",
+    "Магас": "Республика Ингушетия",
+    "Грозный": "Чеченская Республика",
+    "Махачкала": "Республика Дагестан"
+};
 
-        // Навешиваем обработчики клика на каждый регион
-        document.querySelectorAll(".region").forEach(region => {
-            region.addEventListener("click", function (e) {
-                e.stopPropagation();
-                // Убираем подсветку со всех регионов и добавляем текущему
-                document.querySelectorAll(".region").forEach(r => r.classList.remove("active-region"));
-                this.classList.add("active-region");
+function showRegionTooltip(e, name) {
+    if (isZoomed || !name) return;
+    const tooltip = document.getElementById("region-tooltip");
+    if (!tooltip) return;
+    tooltip.innerHTML = name;
+    tooltip.style.left = `${e.clientX}px`;
+    tooltip.style.top = `${e.clientY}px`;
+    tooltip.classList.add("visible");
+}
 
-                // Показываем кнопку "вернуться"
-                document.getElementById('back-btn').classList.add('visible');
- // Предотвращаем всплытие клика к родителю
+function showCityTooltip(e, cityName) {
+    if (!cityName) return;
+    const tooltip = document.getElementById("region-tooltip");
+    if (!tooltip) return;
+    tooltip.innerHTML = `<span style="color:#60a5fa; margin-right:4px;">📍</span> ${cityName}`;
+    tooltip.style.left = `${e.clientX}px`;
+    tooltip.style.top = `${e.clientY}px`;
+    tooltip.classList.add("visible");
+}
 
-                // Получаем точный прямоугольник границ выбранного SVG-элемента
-                const bbox = this.getBBox();
+function hideRegionTooltip() {
+    const tooltip = document.getElementById("region-tooltip");
+    if (tooltip) tooltip.classList.remove("visible");
+}
 
-                // Задаем отступ (padding) в пикселях вокруг региона
-                const padding = 5;
+/**
+ * Функция приближения к выбранному региону
+ */
+function zoomToRegion(regionElement) {
+    if (!regionElement) return;
+    isZoomed = true;
+    hideRegionTooltip();
 
-                // Вычисляем новые целевые координаты для viewBox
-                const targetX = bbox.x - padding;
-                const targetY = bbox.y - padding;
-                const targetWidth = bbox.width + padding * 2;
-                const targetHeight = bbox.height + padding * 2;
+    // Снимаем подсветку со всех регионов
+    document.querySelectorAll(".region").forEach(r => r.classList.remove("active-region"));
 
-                const targetViewBox = `${targetX} ${targetY} ${targetWidth} ${targetHeight}`;
+    const regionName = regionElement.getAttribute("data-region-name");
+    const regionPaths = regionName 
+        ? Array.from(document.querySelectorAll(`.region[data-region-name="${regionName}"]`))
+        : [regionElement];
 
-                // Плавно анимируем transition SVG к новому viewBox
-                
-                // Скрываем города из других регионов и уменьшаем точки текущего
-                const scale = targetWidth / 800; // коэффициент масштабирования
-                document.querySelectorAll(".city-group").forEach(city => {
-                    const dot = city.querySelector(".city-dot");
-                    if (dot) {
-                        const cx = parseFloat(dot.getAttribute("cx"));
-                        const cy = parseFloat(dot.getAttribute("cy"));
-                        // Устанавливаем центр трансформации
-                        city.style.transformOrigin = `${cx}px ${cy}px`;
-                        
-                        // Проверяем, попадает ли город в новую область просмотра
-                        if (cx >= targetX && cx <= targetX + targetWidth &&
-                            cy >= targetY && cy <= targetY + targetHeight) {
-                            city.style.opacity = "1";
-                            city.style.pointerEvents = "auto";
-                            // Сохраняем визуальный размер точек, компенсируя зум
-                            city.style.transform = `scale(${Math.max(scale, 0.15)})`; 
-                        } else {
-                            city.style.opacity = "0";
-                            city.style.pointerEvents = "none";
-                        }
-                    }
-                });
+    // Подсвечиваем все части региона
+    regionPaths.forEach(r => r.classList.add("active-region"));
 
-                animateViewBox(svg, targetViewBox, 600);
-            });
+    // Показываем кнопку назад
+    const backBtn = document.getElementById('back-btn');
+    if (backBtn) backBtn.classList.add('visible');
+
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    regionPaths.forEach(path => {
+        try {
+            const bbox = path.getBBox();
+            if (bbox.width > 0 && bbox.height > 0) {
+                minX = Math.min(minX, bbox.x);
+                minY = Math.min(minY, bbox.y);
+                maxX = Math.max(maxX, bbox.x + bbox.width);
+                maxY = Math.max(maxY, bbox.y + bbox.height);
+            }
+        } catch (err) {
+            console.error(err);
+        }
+    });
+
+    if (minX === Infinity) {
+        const bbox = regionElement.getBBox();
+        minX = bbox.x;
+        minY = bbox.y;
+        maxX = bbox.x + bbox.width;
+        maxY = bbox.y + bbox.height;
+    }
+
+    const padding = 15;
+    const targetX = minX - padding;
+    const targetY = minY - padding;
+    const targetWidth = Math.max(10, (maxX - minX) + padding * 2);
+    const targetHeight = Math.max(10, (maxY - minY) + padding * 2);
+    const targetViewBox = `${targetX} ${targetY} ${targetWidth} ${targetHeight}`;
+
+    // Точный коэффициент масштабирования точек и подписей
+    const zoomFactor = Math.min(800 / targetWidth, 500 / targetHeight);
+    const compScale = 1 / zoomFactor;
+
+    document.querySelectorAll(".city-group").forEach(city => {
+        const dot = city.querySelector(".city-dot");
+        if (dot) {
+            const cx = parseFloat(dot.getAttribute("cx"));
+            const cy = parseFloat(dot.getAttribute("cy"));
+            city.style.transformOrigin = `${cx}px ${cy}px`;
+            
+            const isInside = (cx >= targetX && cx <= targetX + targetWidth &&
+                              cy >= targetY && cy <= targetY + targetHeight);
+
+            if (isInside) {
+                city.classList.add("in-active-region");
+                city.style.opacity = "1";
+                city.style.pointerEvents = "auto";
+                city.style.transform = `scale(${compScale})`; 
+            } else {
+                city.classList.remove("in-active-region");
+                city.style.opacity = "0";
+                city.style.pointerEvents = "none";
+                city.style.transform = `scale(${compScale})`;
+            }
+        }
+    });
+
+    const svg = document.getElementById("russia-map");
+    if (svg) animateViewBox(svg, targetViewBox, 600);
+}
+
+/**
+ * Поиск SVG-элемента региона для указанного города
+ */
+function getRegionForCity(cityName, cityDot) {
+    const regionName = CITY_TO_REGION[cityName];
+    if (regionName) {
+        const regionEl = document.querySelector(`.region[data-region-name="${regionName}"]`);
+        if (regionEl) return regionEl;
+    }
+    if (cityDot) {
+        const cx = parseFloat(cityDot.getAttribute("cx"));
+        const cy = parseFloat(cityDot.getAttribute("cy"));
+        let bestRegion = null;
+        let minArea = Infinity;
+        document.querySelectorAll(".region").forEach(reg => {
+            const bbox = reg.getBBox();
+            if (cx >= bbox.x && cx <= bbox.x + bbox.width &&
+                cy >= bbox.y && cy <= bbox.y + bbox.height) {
+                const area = bbox.width * bbox.height;
+                if (area < minArea) {
+                    minArea = area;
+                    bestRegion = reg;
+                }
+            }
+        });
+        if (bestRegion) return bestRegion;
+    }
+    return null;
+}
+
+function handleCityClick(cityName, dotEl) {
+    if (!cityName) return;
+    selectCity(cityName);
+    const targetRegion = getRegionForCity(cityName, dotEl);
+    if (targetRegion) {
+        zoomToRegion(targetRegion);
+    }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    const svg = document.getElementById("russia-map");
+
+    // Обработчики для каждого РЕГИОНА
+    document.querySelectorAll(".region").forEach(region => {
+        region.addEventListener("mouseenter", function (e) {
+            const name = this.getAttribute("data-region-name");
+            showRegionTooltip(e, name);
         });
 
-        // Навешиваем обработчики клика на каждый ГОРОД (огонек)
-        document.querySelectorAll(".city-group").forEach(cityGroup => {
-            cityGroup.addEventListener("click", function (e) {
-                e.stopPropagation();
-
-                // 1. Вызываем функцию выбора города (обновит боковую панель)
-                selectCity(this.dataset.city);
-
-                // 2. Получаем координаты города для зума
-                const bbox = this.getBBox();
-                const padding = 15; // отступ вокруг города при приближении
-
-                const targetX = bbox.x - padding;
-                const targetY = bbox.y - padding;
-                const targetWidth = bbox.width + padding * 2;
-                const targetHeight = bbox.height + padding * 2;
-
-                const targetViewBox = `${targetX} ${targetY} ${targetWidth} ${targetHeight}`;
-
-                // 3. Плавно анимируем SVG к городу
-                
-                // Скрываем города из других регионов и уменьшаем точки текущего
-                const scale = targetWidth / 800; // коэффициент масштабирования
-                document.querySelectorAll(".city-group").forEach(city => {
-                    const dot = city.querySelector(".city-dot");
-                    if (dot) {
-                        const cx = parseFloat(dot.getAttribute("cx"));
-                        const cy = parseFloat(dot.getAttribute("cy"));
-                        // Устанавливаем центр трансформации
-                        city.style.transformOrigin = `${cx}px ${cy}px`;
-                        
-                        // Проверяем, попадает ли город в новую область просмотра
-                        if (cx >= targetX && cx <= targetX + targetWidth &&
-                            cy >= targetY && cy <= targetY + targetHeight) {
-                            city.style.opacity = "1";
-                            city.style.pointerEvents = "auto";
-                            // Сохраняем визуальный размер точек, компенсируя зум
-                            city.style.transform = `scale(${Math.max(scale, 0.15)})`; 
-                        } else {
-                            city.style.opacity = "0";
-                            city.style.pointerEvents = "none";
-                        }
-                    }
-                });
-
-                animateViewBox(svg, targetViewBox, 600);
-            });
+        region.addEventListener("mousemove", function (e) {
+            if (!isZoomed) {
+                const tooltip = document.getElementById("region-tooltip");
+                if (tooltip && tooltip.classList.contains("visible")) {
+                    tooltip.style.left = `${e.clientX}px`;
+                    tooltip.style.top = `${e.clientY}px`;
+                }
+            }
         });
 
+        region.addEventListener("mouseleave", function () {
+            hideRegionTooltip();
+        });
 
-        // Сброс масштаба при клике на свободное место карты
+        region.addEventListener("click", function (e) {
+            e.stopPropagation();
+            zoomToRegion(this);
+        });
+    });
+
+    // Обработчики для каждого ГОРОДА (наведение + клик)
+    document.querySelectorAll(".city-group").forEach(cityGroup => {
+        const getCityName = (el) => {
+            return el.dataset.city || 
+                   el.getAttribute("data-city") || 
+                   el.querySelector(".city-dot")?.getAttribute("data-city") ||
+                   el.querySelector(".city-label")?.textContent?.trim() || "";
+        };
+
+        // Наведение мыши на город — всплывает название
+        cityGroup.addEventListener("mouseenter", function (e) {
+            e.stopPropagation();
+            const name = getCityName(this);
+            showCityTooltip(e, name);
+        });
+
+        cityGroup.addEventListener("mousemove", function (e) {
+            e.stopPropagation();
+            const tooltip = document.getElementById("region-tooltip");
+            if (tooltip && tooltip.classList.contains("visible")) {
+                tooltip.style.left = `${e.clientX}px`;
+                tooltip.style.top = `${e.clientY}px`;
+            }
+        });
+
+        cityGroup.addEventListener("mouseleave", function (e) {
+            e.stopPropagation();
+            hideRegionTooltip();
+        });
+
+        // Клик по группе города
+        cityGroup.addEventListener("click", function (e) {
+            e.stopPropagation();
+            const cityName = getCityName(this);
+            const dot = this.querySelector(".city-dot");
+            handleCityClick(cityName, dot);
+        });
+    });
+
+    // Дополнительный прямой обработчик клика на каждый circle.city-dot
+    document.querySelectorAll(".city-dot").forEach(dot => {
+        dot.addEventListener("click", function (e) {
+            e.stopPropagation();
+            const cityGroup = this.closest(".city-group");
+            const cityName = cityGroup?.dataset?.city || this.getAttribute("data-city") || "";
+            handleCityClick(cityName, this);
+        });
+    });
+
+    // Сброс масштаба при клике на свободное место карты
+    if (svg) {
         svg.addEventListener("click", (e) => {
             if (e.target === svg || e.target.id === "map-background") {
                 resetMapView();
-                
             }
         });
+    }
+
+    addEgeSubject();
+});
+
+/**
+ * Функция для плавной анимации перехода viewBox у SVG
+ */
+function animateViewBox(svgElem, targetViewBox, duration) {
+    const startViewBox = (svgElem.getAttribute("viewBox") || "0 0 800 500")
+        .split(" ")
+        .map(Number);
+    const target = targetViewBox.split(" ").map(Number);
+    const startTime = performance.now();
+
+    function step(now) {
+        const elapsed = now - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+
+        // Функция сглаживания Ease-In-Out
+        const ease = progress < 0.5 
+            ? 2 * progress * progress 
+            : -1 + (4 - 2 * progress) * progress;
+
+        const currentViewBox = startViewBox.map((start, i) => start + (target[i] - start) * ease);
+        svgElem.setAttribute("viewBox", currentViewBox.join(" "));
+
+        if (progress < 1) {
+            requestAnimationFrame(step);
+        }
+    }
+
+    requestAnimationFrame(step);
+}
+
+// Регистрация
+function handleRegister() {
+    const name = document.getElementById('reg-name').value.trim();
+    const email = document.getElementById('reg-email').value.trim();
+
+    if (!name || !email) {
+        alert('Пожалуйста, заполните имя и email.');
+        return;
+    }
+
+    currentUser = { name, email };
+    document.getElementById('user-display-name').innerText = name;
+    document.getElementById('user-display-email').innerText = email;
+
+    document.getElementById('reg-form').style.display = 'none';
+    document.getElementById('reg-status').style.display = 'block';
+}
+
+function handleLogout() {
+    currentUser = null;
+    document.getElementById('reg-form').style.display = 'flex';
+    document.getElementById('reg-status').style.display = 'none';
+}
+
+// Расчет суммарного балла
+function calculateTotal() {
+    const modeElement = document.querySelector('input[name="admissionMode"]:checked');
+    const mode = modeElement ? modeElement.value : 'ege';
+    const scoreSpan = document.getElementById('total-ege-score');
+
+    if (mode === 'bvi') {
+        if (scoreSpan) scoreSpan.textContent = 'БВИ';
+        if (typeof updateSidebarUnis === 'function') updateSidebarUnis();
+        return;
+    }
+
+    let total = 0;
+    const inputs = document.querySelectorAll('.ege-input');
+    inputs.forEach(input => {
+        const val = parseInt(input.value, 10);
+        if (!isNaN(val)) {
+            total += Math.min(100, Math.max(0, val));
+        }
     });
 
-    /**
-     * Функция для плавной анимации перехода viewBox у SVG
-     * @param {SVGSVGElement} svgElem - SVG элемент карты
-     * @param {string} targetViewBox - Строка с целевыми координатами "x y width height"
-     * @param {number} duration - Длительность анимации в миллисекундах
-     */
-    function animateViewBox(svgElem, targetViewBox, duration) {
-        const startViewBox = (svgElem.getAttribute("viewBox") || "0 0 1000 600")
-            .split(" ")
-            .map(Number);
-        const target = targetViewBox.split(" ").map(Number);
-        const startTime = performance.now();
+    if (scoreSpan) scoreSpan.textContent = total;
+    if (typeof updateSidebarUnis === 'function') updateSidebarUnis();
+}
 
-        function step(now) {
-            const elapsed = now - startTime;
-            const progress = Math.min(elapsed / duration, 1);
+// Выбор города
+function selectCity(cityName) {
+    selectedCity = cityName;
+    const title = document.getElementById('sidebar-region-title');
+    if (title) title.innerText = `ВУЗы города ${cityName}`;
+    const backBtn = document.getElementById('back-btn');
+    if (backBtn) backBtn.classList.add('visible');
+    updateSidebarUnis();
+}
 
-            // Функция сглаживания Ease-In-Out
-            const ease = progress < 0.5 
-                ? 2 * progress * progress 
-                : -1 + (4 - 2 * progress) * progress;
+// Обновление списка ВУЗов в сайдбаре с учетом баллов
+function updateSidebarUnis() {
+    if (!selectedCity || !uniData[selectedCity]) return;
 
-            // Вычисляем промежуточные значения
-            const currentViewBox = startViewBox.map((start, i) => start + (target[i] - start) * ease);
+    const totalScore = Number(document.getElementById('total-ege-score').innerText) || 0;
+    const studyType = document.querySelector('input[name="studyType"]:checked').value;
+    const listContainer = document.getElementById('sidebar-unis-list');
+    listContainer.innerHTML = '';
 
-            svgElem.setAttribute("viewBox", currentViewBox.join(" "));
-
-            if (progress < 1) {
-                requestAnimationFrame(step);
-            }
-        }
-
-        requestAnimationFrame(step);
-    }
-    // База данных ВУЗов по городам
-    const citiesData = [
-        // Первоначальный список
-        { name: "Владивосток", cx: 688, cy: 450 },
-        { name: "Хабаровск", cx: 683, cy: 393 },
-        { name: "Иркутск", cx: 476, cy: 417 },
-        { name: "Магадан", cx: 691, cy: 241 },
-        { name: "Анадырь", cx: 730, cy: 103 },
-        { name: "Петропавловск-Камчатский", cx: 775, cy: 254 },
-        { name: "Южно-Сахалинск", cx: 734, cy: 372 },
-        { name: "Якутск", cx: 583, cy: 281 },
-        { name: "Улан-Удэ", cx: 492, cy: 419 },
-        { name: "Кызыл", cx: 410, cy: 422 },
-        { name: "Красноярск", cx: 399, cy: 376 },
-        { name: "Абакан", cx: 387, cy: 398 },
-        { name: "Томск", cx: 352, cy: 361 },
-        { name: "Горно-Алтайск", cx: 347, cy: 419 },
-        { name: "Барнаул", cx: 341, cy: 397 },
-        { name: "Кемерово", cx: 361, cy: 382 },
-        { name: "Новосибирск", cx: 339, cy: 377 },
-        { name: "Омск", cx: 283, cy: 360 },
-        { name: "Тюмень", cx: 251, cy: 323 },
-        { name: "Курган", cx: 241, cy: 338 },
-        { name: "Челябинск", cx: 217, cy: 327 },
-        { name: "Екатеринбург", cx: 226, cy: 308 },
-        { name: "Ханты-Мансийск", cx: 289, cy: 294 },
-        { name: "Салехард", cx: 300, cy: 235 },
-        { name: "Нарьян-Мар", cx: 259, cy: 193 },
-        { name: "Сыктывкар", cx: 209, cy: 236 },
-        { name: "Киров", cx: 183, cy: 261 },
-        { name: "Пермь", cx: 208, cy: 285 },
-        { name: "Уфа", cx: 187, cy: 313 },
-        { name: "Оренбург", cx: 164, cy: 335 },
-        { name: "Самара", cx: 149, cy: 306 },
-        { name: "Ижевск", cx: 185, cy: 285 },
-        { name: "Ульяновск", cx: 147, cy: 289 },
-        { name: "Казань", cx: 163, cy: 280 },
-        { name: "Архангельск", cx: 197, cy: 180 },
-        { name: "Мурманск", cx: 212, cy: 126 },
-        { name: "Санкт-Петербург", cx: 138, cy: 180 },
-        { name: "Петрозаводск", cx: 156, cy: 172 }
-        ];
-
-    document.querySelector('svg').addEventListener('click', (e) => {
-        const svg = e.currentTarget;
-        const pt = svg.createSVGPoint();
-        pt.x = e.clientX;
-        pt.y = e.clientY;
-        const cursorPt = pt.matrixTransform(svg.getScreenCTM().inverse());
-        console.log(`cx="${Math.round(cursorPt.x)}" cy="${Math.round(cursorPt.y)}"`);
+    uniData[selectedCity].forEach(uni => {
+        const reqScore = studyType === 'budget' ? uni.score : uni.paidScore;
+        const isPassing = totalScore > 0 && totalScore >= reqScore;
+        
+        const uniCard = document.createElement('div');
+        uniCard.className = 'uni-item';
+        uniCard.onclick = () => showUniInfo(uni);
+        
+        uniCard.innerHTML = `
+            <div class="uni-item-name">${uni.name}</div>
+            <div class="uni-item-info">
+                <span>Мин. балл: <strong>${reqScore}</strong></span>
+                ${totalScore > 0 ? `<span class="${isPassing ? 'badge-pass' : 'badge-fail'}">${isPassing ? 'Проходит' : 'Не хватает'}</span>` : ''}
+            </div>
+        `;
+        listContainer.appendChild(uniCard);
     });
+}
 
-    let selectedCity = null;
-    let currentUser = null;
+// Показ деталей ВУЗа
+function showUniInfo(uni) {
+    document.getElementById('uni-name').innerText = uni.name;
+    document.getElementById('uni-score').innerText = `${uni.score} (бюджет) / ${uni.paidScore} (платное)`;
+    document.getElementById('uni-specs').innerText = uni.specs;
+    document.getElementById('info-panel').classList.add('visible');
+}
 
-    // Регистрация
-    function handleRegister() {
-        const name = document.getElementById('reg-name').value.trim();
-        const email = document.getElementById('reg-email').value.trim();
+// Сброс выбора
+function resetMapView() {
+    isZoomed = false;
+    hideRegionTooltip();
+    selectedCity = null;
 
-        if (!name || !email) {
-            alert('Пожалуйста, заполните имя и email.');
-            return;
-        }
+    const title = document.getElementById('sidebar-region-title');
+    if (title) title.innerText = 'ВУЗы региона';
 
-        currentUser = { name, email };
-        document.getElementById('user-display-name').innerText = name;
-        document.getElementById('user-display-email').innerText = email;
+    const list = document.getElementById('sidebar-unis-list');
+    if (list) list.innerHTML = '<p style="font-size: 12px; color: #94a3b8;">Выберите город на карте для просмотра доступных ВУЗов.</p>';
 
-        document.getElementById('reg-form').style.display = 'none';
-        document.getElementById('reg-status').style.display = 'block';
-    }
+    const backBtn = document.getElementById('back-btn');
+    if (backBtn) backBtn.classList.remove('visible');
 
-    function handleLogout() {
-        currentUser = null;
-        document.getElementById('reg-form').style.display = 'flex';
-        document.getElementById('reg-status').style.display = 'none';
-    }
+    const infoPanel = document.getElementById('info-panel');
+    if (infoPanel) infoPanel.classList.remove('visible');
 
-    // Расчет суммарного балла
-    function calculateTotal() {
-        const inputs = document.querySelectorAll('.ege-input');
-        let total = 0;
-        inputs.forEach(input => {
-            total += Number(input.value) || 0;
-        });
-        document.getElementById('total-ege-score').innerText = total;
-        if (selectedCity) updateSidebarUnis();
-    }
+    const svg = document.getElementById("russia-map");
+    if (svg) animateViewBox(svg, "0 0 800 500", 600);
+    
+    // Снимаем подсветку региона
+    document.querySelectorAll('.region').forEach(r => r.classList.remove('active-region'));
+    
+    // Возвращаем все города в исходное состояние
+    document.querySelectorAll(".city-group").forEach(city => {
+        city.classList.remove("in-active-region");
+        city.style.opacity = "1";
+        city.style.pointerEvents = "auto";
+        city.style.transform = "scale(1)";
+    });
+}
 
-    // Выбор города
-    function selectCity(cityName) {
-        selectedCity = cityName;
-        document.getElementById('sidebar-region-title').innerText = `ВУЗы города ${cityName}`;
-        document.getElementById('back-btn').classList.add('visible');
-        updateSidebarUnis();
-    }
-
-    // Обновление списка ВУЗов в сайдбаре с учетом баллов
-    function updateSidebarUnis() {
-        if (!selectedCity || !uniData[selectedCity]) return;
-
-        const totalScore = Number(document.getElementById('total-ege-score').innerText) || 0;
-        const studyType = document.querySelector('input[name="studyType"]:checked').value;
-        const listContainer = document.getElementById('sidebar-unis-list');
-        listContainer.innerHTML = '';
-
-        uniData[selectedCity].forEach(uni => {
-            const reqScore = studyType === 'budget' ? uni.score : uni.paidScore;
-            const isPassing = totalScore > 0 && totalScore >= reqScore;
-            
-            const uniCard = document.createElement('div');
-            uniCard.className = 'uni-item';
-            uniCard.onclick = () => showUniInfo(uni);
-            
-            uniCard.innerHTML = `
-                <div class="uni-item-name">${uni.name}</div>
-                <div class="uni-item-info">
-                    <span>Мин. балл: <strong>${reqScore}</strong></span>
-                    ${totalScore > 0 ? `<span class="${isPassing ? 'badge-pass' : 'badge-fail'}">${isPassing ? 'Проходит' : 'Не хватает'}</span>` : ''}
-                </div>
-            `;
-            listContainer.appendChild(uniCard);
-        });
-    }
-
-    // Показ деталей ВУЗа
-    function showUniInfo(uni) {
-        document.getElementById('uni-name').innerText = uni.name;
-        document.getElementById('uni-score').innerText = `${uni.score} (бюджет) / ${uni.paidScore} (платное)`;
-        document.getElementById('uni-specs').innerText = uni.specs;
-        document.getElementById('info-panel').classList.add('visible');
-    }
-
-    // Сброс выбора
-    function resetMapView() {
-        selectedCity = null;
-        document.getElementById('sidebar-region-title').innerText = 'ВУЗы региона';
-        document.getElementById('sidebar-unis-list').innerHTML = '<p style="font-size: 12px; color: #94a3b8;">Выберите город на карте для просмотра доступных ВУЗов.</p>';
-        document.getElementById('back-btn').classList.remove('visible');
-        document.getElementById('info-panel').classList.remove('visible');
-
-        const svg = document.getElementById("russia-map");
-        if (svg) animateViewBox(svg, "0 0 800 500", 600);
-        
-        // Снимаем подсветку региона
-        document.querySelectorAll('.region').forEach(r => r.classList.remove('active-region'));
-        
-        // Возвращаем все города
-        document.querySelectorAll(".city-group").forEach(city => {
-            city.style.opacity = "1";
-            city.style.pointerEvents = "auto";
-            city.style.transform = "scale(1)";
-        });
-    }
 // Список доступных предметов ЕГЭ
 const AVAILABLE_SUBJECTS = [
     "Русский язык",
@@ -342,6 +525,7 @@ function toggleAdmissionMode() {
 // Добавление предмета ЕГЭ (максимум 3)
 function addEgeSubject(defaultSubject = null) {
     const list = document.getElementById('ege-subjects-list');
+    if (!list) return;
     const currentRows = list.querySelectorAll('.ege-subject-row');
     if (currentRows.length >= 3) return;
 
@@ -398,6 +582,7 @@ function addEgeSubject(defaultSubject = null) {
 // Блокировка повторного выбора уже выбранных предметов
 function updateSubjectDropdowns() {
     const list = document.getElementById('ege-subjects-list');
+    if (!list) return;
     const selects = list.querySelectorAll('.ege-select');
     const rows = list.querySelectorAll('.ege-subject-row');
     const selectedValues = Array.from(selects).map(s => s.value);
@@ -426,33 +611,3 @@ function updateSubjectDropdowns() {
         addBtn.style.display = selects.length >= 3 ? 'none' : 'block';
     }
 }
-
-// Перерасчет суммы баллов
-function calculateTotal() {
-    const modeElement = document.querySelector('input[name="admissionMode"]:checked');
-    const mode = modeElement ? modeElement.value : 'ege';
-    const scoreSpan = document.getElementById('total-ege-score');
-
-    if (mode === 'bvi') {
-        if (scoreSpan) scoreSpan.textContent = 'БВИ';
-        if (typeof updateSidebarUnis === 'function') updateSidebarUnis();
-        return;
-    }
-
-    let total = 0;
-    const inputs = document.querySelectorAll('.ege-input');
-    inputs.forEach(input => {
-        const val = parseInt(input.value, 10);
-        if (!isNaN(val)) {
-            total += Math.min(100, Math.max(0, val));
-        }
-    });
-
-    if (scoreSpan) scoreSpan.textContent = total;
-    if (typeof updateSidebarUnis === 'function') updateSidebarUnis();
-}
-
-// Инициализация стартового предмета при загрузке страницы
-document.addEventListener('DOMContentLoaded', () => {
-    addEgeSubject();
-});
