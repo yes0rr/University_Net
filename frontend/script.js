@@ -1,113 +1,111 @@
+
+// Инициализация нижней шторки (Bottom Sheet) для мобильных устройств
+function initBottomSheet() {
+    const sidebar = document.getElementById("region-sidebar");
+    const dragArea = document.getElementById("sheet-drag-area");
+    if (!sidebar || !dragArea) return;
+
+    let startY = 0;
+    let currentY = 0;
+    let isDragging = false;
+
+    window.expandBottomSheet = function() {
+        sidebar.classList.add("sheet-expanded");
+    };
+
+    window.collapseBottomSheet = function() {
+        sidebar.classList.remove("sheet-expanded");
+    };
+
+    window.toggleBottomSheet = function() {
+        sidebar.classList.toggle("sheet-expanded");
+    };
+
+    dragArea.addEventListener("click", () => {
+        window.toggleBottomSheet();
+    });
+
+    dragArea.addEventListener("touchstart", (e) => {
+        startY = e.touches[0].clientY;
+        currentY = startY;
+        isDragging = true;
+    }, { passive: true });
+
+    window.addEventListener("touchmove", (e) => {
+        if (!isDragging) return;
+        currentY = e.touches[0].clientY;
+    }, { passive: true });
+
+    window.addEventListener("touchend", () => {
+        if (!isDragging) return;
+        isDragging = false;
+        const diff = currentY - startY;
+        if (diff < -35) {
+            window.expandBottomSheet();
+        } else if (diff > 35) {
+            window.collapseBottomSheet();
+        }
+    });
+}
+
+function zoomToBox(targetX, targetY, targetWidth, targetHeight) {
+    const svg = document.getElementById("russia-map");
+    const targetViewBox = `${targetX} ${targetY} ${targetWidth} ${targetHeight}`;
+    const zoomFactor = Math.min(800 / targetWidth, 500 / targetHeight);
+    const compScale = 1 / zoomFactor;
+
+    document.querySelectorAll(".city-group").forEach(city => {
+        const dot = city.querySelector(".city-dot");
+        const label = city.querySelector(".city-label");
+        if (dot) {
+            const cx = parseFloat(dot.getAttribute("cx"));
+            const cy = parseFloat(dot.getAttribute("cy"));
+            
+            const isInside = (cx >= targetX && cx <= targetX + targetWidth &&
+                              cy >= targetY && cy <= targetY + targetHeight);
+
+            // Сбрасываем CSS scale-трансформации, чтобы не искажать и не сдвигать текст
+            city.style.transform = "";
+            city.style.transformOrigin = "";
+
+            if (isInside) {
+                city.classList.add("in-active-region");
+                city.style.opacity = "1";
+                city.style.pointerEvents = "auto";
+
+                // Адаптивный аккуратный размер точки без пикселизации
+                const isTop = city.classList.contains("is-top");
+                const scaledR = Math.max(1.3, (isTop ? 3.2 : 2.2) * Math.pow(compScale, 0.65));
+                dot.setAttribute("r", scaledR.toFixed(2));
+                dot.style.strokeWidth = Math.max(0.35, (isTop ? 1.0 : 0.8) * compScale).toFixed(2) + "px";
+
+                // Адаптивный размер текста рядом с точкой
+                if (label) {
+                    const scaledFont = Math.max(2.6, (isTop ? 7.5 : 6.8) * Math.pow(compScale, 0.75));
+                    const scaledStroke = Math.max(0.6, 2.0 * compScale);
+                    label.style.fontSize = scaledFont.toFixed(2) + "px";
+                    label.style.strokeWidth = scaledStroke.toFixed(2) + "px";
+                }
+            } else {
+                city.classList.remove("in-active-region");
+                city.style.opacity = "0";
+                city.style.pointerEvents = "none";
+            }
+        }
+    });
+
+    if (svg) animateViewBox(svg, targetViewBox, 600);
+}
+
 let isZoomed = false;
 let selectedCity = null;
 let currentUser = null;
-
-// Соответствие городов субъектам РФ для масштабирования к региону
-const CITY_TO_REGION = {
-    "Владивосток": "Приморский край",
-    "Хабаровск": "Хабаровский край",
-    "Иркутск": "Иркутская область",
-    "Магадан": "Магаданская область",
-    "Анадырь": "Чукотский автономный округ",
-    "Петропавловск-Камчатский": "Камчатский край",
-    "Южно-Сахалинск": "Сахалинская область",
-    "Якутск": "Республика Саха (Якутия)",
-    "Улан-Удэ": "Республика Бурятия",
-    "Кызыл": "Республика Тыва",
-    "Красноярск": "Красноярский край",
-    "Абакан": "Республика Хакасия",
-    "Томск": "Томская область",
-    "Горно-Алтайск": "Республика Алтай",
-    "Барнаул": "Алтайский край",
-    "Кемерово": "Кемеровская область",
-    "Новосибирск": "Новосибирская область",
-    "Омск": "Омская область",
-    "Тюмень": "Тюменская область",
-    "Курган": "Курганская область",
-    "Челябинск": "Челябинская область",
-    "Екатеринбург": "Свердловская область",
-    "Ханты-Мансийск": "Ханты-Мансийский АО — Югра",
-    "Салехард": "Ямало-Ненецкий автономный округ",
-    "Нарьян-Мар": "Ненецкий автономный округ",
-    "Сыктывкар": "Республика Коми",
-    "Киров": "Кировская область",
-    "Пермь": "Пермский край",
-    "Уфа": "Республика Башкортостан",
-    "Оренбург": "Оренбургская область",
-    "Самара": "Самарская область",
-    "Ижевск": "Удмуртская Республика",
-    "Ульяновск": "Ульяновская область",
-    "Казань": "Республика Татарстан",
-    "Архангельск": "Архангельская область",
-    "Мурманск": "Мурманская область",
-    "Санкт-Петербург": "Санкт-Петербург",
-    "Петрозаводск": "Республика Карелия",
-    "Чита": "Забайкальский край",
-    "Благовещенск": "Амурская область",
-    "Биробиджан": "Еврейская автономная область",
-    "Калининград": "Калининградская область",
-    "Великий Новгород": "Новгородская область",
-    "Псков": "Псковская область",
-    "Вологда": "Вологодская область",
-    "Кострома": "Костромская область",
-    "Иваново": "Ивановская область",
-    "Ярославль": "Ярославская область",
-    "Тверь": "Тверская область",
-    "Смоленск": "Смоленская область",
-    "Владимир": "Владимирская область",
-    "Белгород": "Белгородская область",
-    "Воронеж": "Воронежская область",
-    "Тамбов": "Тамбовская область",
-    "Липецк": "Липецкая область",
-    "Рязань": "Рязанская область",
-    "Тула": "Тульская область",
-    "Орел": "Орловская область",
-    "Курск": "Курская область",
-    "Брянск": "Брянская область",
-    "Калуга": "Калужская область",
-    "Москва": "Москва",
-    "Нижний Новгород": "Нижегородская область",
-    "Йошкар-Ола": "Республика Марий Эл",
-    "Чебоксары": "Чувашская Республика",
-    "Саранск": "Республика Мордовия",
-    "Пенза": "Пензенская область",
-    "Саратов": "Саратовская область",
-    "Волгоград": "Волгоградская область",
-    "Астрахань": "Астраханская область",
-    "Элиста": "Республика Калмыкия",
-    "Луганск": "Луганская Народная Республика",
-    "Донецк": "Донецкая Народная Республика",
-    "Мелитополь": "Запорожская область",
-    "Геническ": "Херсонская область",
-    "Симферополь": "Республика Крым",
-    "Севастополь": "Республика Крым",
-    "Ростов-на-Дону": "Ростовская область",
-    "Краснодар": "Краснодарский край",
-    "Майкоп": "Республика Адыгея",
-    "Ставрополь": "Ставропольский край",
-    "Черкесск": "Карачаево-Черкесская Республика",
-    "Нальчик": "Кабардино-Балкарская Республика",
-    "Владикавказ": "Республика Северная Осетия — Алания",
-    "Магас": "Республика Ингушетия",
-    "Грозный": "Чеченская Республика",
-    "Махачкала": "Республика Дагестан"
-};
 
 function showRegionTooltip(e, name) {
     if (isZoomed || !name) return;
     const tooltip = document.getElementById("region-tooltip");
     if (!tooltip) return;
-    tooltip.innerHTML = name;
-    tooltip.style.left = `${e.clientX}px`;
-    tooltip.style.top = `${e.clientY}px`;
-    tooltip.classList.add("visible");
-}
-
-function showCityTooltip(e, cityName) {
-    if (!cityName) return;
-    const tooltip = document.getElementById("region-tooltip");
-    if (!tooltip) return;
-    tooltip.innerHTML = `<span style="color:#60a5fa; margin-right:4px;">📍</span> ${cityName}`;
+    tooltip.textContent = name;
     tooltip.style.left = `${e.clientX}px`;
     tooltip.style.top = `${e.clientY}px`;
     tooltip.classList.add("visible");
@@ -118,138 +116,12 @@ function hideRegionTooltip() {
     if (tooltip) tooltip.classList.remove("visible");
 }
 
-/**
- * Функция приближения к выбранному региону
- */
-function zoomToRegion(regionElement) {
-    if (!regionElement) return;
-    isZoomed = true;
-    hideRegionTooltip();
-
-    // Снимаем подсветку со всех регионов
-    document.querySelectorAll(".region").forEach(r => r.classList.remove("active-region"));
-
-    const regionName = regionElement.getAttribute("data-region-name");
-    const regionPaths = regionName 
-        ? Array.from(document.querySelectorAll(`.region[data-region-name="${regionName}"]`))
-        : [regionElement];
-
-    // Подсвечиваем все части региона
-    regionPaths.forEach(r => r.classList.add("active-region"));
-
-    // Показываем кнопку назад
-    const backBtn = document.getElementById('back-btn');
-    if (backBtn) backBtn.classList.add('visible');
-
-    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-    regionPaths.forEach(path => {
-        try {
-            const bbox = path.getBBox();
-            if (bbox.width > 0 && bbox.height > 0) {
-                minX = Math.min(minX, bbox.x);
-                minY = Math.min(minY, bbox.y);
-                maxX = Math.max(maxX, bbox.x + bbox.width);
-                maxY = Math.max(maxY, bbox.y + bbox.height);
-            }
-        } catch (err) {
-            console.error(err);
-        }
-    });
-
-    if (minX === Infinity) {
-        const bbox = regionElement.getBBox();
-        minX = bbox.x;
-        minY = bbox.y;
-        maxX = bbox.x + bbox.width;
-        maxY = bbox.y + bbox.height;
-    }
-
-    const padding = 15;
-    const targetX = minX - padding;
-    const targetY = minY - padding;
-    const targetWidth = Math.max(10, (maxX - minX) + padding * 2);
-    const targetHeight = Math.max(10, (maxY - minY) + padding * 2);
-    const targetViewBox = `${targetX} ${targetY} ${targetWidth} ${targetHeight}`;
-
-    // Точный коэффициент масштабирования точек и подписей
-    const zoomFactor = Math.min(800 / targetWidth, 500 / targetHeight);
-    const compScale = 1 / zoomFactor;
-
-    document.querySelectorAll(".city-group").forEach(city => {
-        const dot = city.querySelector(".city-dot");
-        if (dot) {
-            const cx = parseFloat(dot.getAttribute("cx"));
-            const cy = parseFloat(dot.getAttribute("cy"));
-            city.style.transformOrigin = `${cx}px ${cy}px`;
-            
-            const isInside = (cx >= targetX && cx <= targetX + targetWidth &&
-                              cy >= targetY && cy <= targetY + targetHeight);
-
-            if (isInside) {
-                city.classList.add("in-active-region");
-                city.style.opacity = "1";
-                city.style.pointerEvents = "auto";
-                city.style.transform = `scale(${compScale})`; 
-            } else {
-                city.classList.remove("in-active-region");
-                city.style.opacity = "0";
-                city.style.pointerEvents = "none";
-                city.style.transform = `scale(${compScale})`;
-            }
-        }
-    });
-
+document.addEventListener("DOMContentLoaded", () => {
+    initBottomSheet();
     const svg = document.getElementById("russia-map");
-    if (svg) animateViewBox(svg, targetViewBox, 600);
-}
+    const initialViewBox = svg ? (svg.getAttribute("viewBox") || "0 0 800 500") : "0 0 800 500";
 
-/**
- * Поиск SVG-элемента региона для указанного города
- */
-function getRegionForCity(cityName, cityDot) {
-    const regionName = CITY_TO_REGION[cityName];
-    if (regionName) {
-        const regionEl = document.querySelector(`.region[data-region-name="${regionName}"]`);
-        if (regionEl) return regionEl;
-    }
-    if (cityDot) {
-        const cx = parseFloat(cityDot.getAttribute("cx"));
-        const cy = parseFloat(cityDot.getAttribute("cy"));
-        let bestRegion = null;
-        let minArea = Infinity;
-        document.querySelectorAll(".region").forEach(reg => {
-            const bbox = reg.getBBox();
-            if (cx >= bbox.x && cx <= bbox.x + bbox.width &&
-                cy >= bbox.y && cy <= bbox.y + bbox.height) {
-                const area = bbox.width * bbox.height;
-                if (area < minArea) {
-                    minArea = area;
-                    bestRegion = reg;
-                }
-            }
-        });
-        if (bestRegion) return bestRegion;
-    }
-    return null;
-}
-
-function handleCityClick(cityName, dotEl) {
-    if (!cityName) return;
-    selectCity(cityName);
-    const targetRegion = getRegionForCity(cityName, dotEl);
-    if (targetRegion) {
-        zoomToRegion(targetRegion);
-    }
-}
-
-/**
- * Инициализация всех обработчиков событий интерактивной карты
- */
-function initMapHandlers() {
-    const svg = document.getElementById("russia-map");
-    if (!svg) return;
-
-    // Обработчики для каждого РЕГИОНА
+    // Навешиваем обработчики клика и наведения на каждый регион
     document.querySelectorAll(".region").forEach(region => {
         region.addEventListener("mouseenter", function (e) {
             const name = this.getAttribute("data-region-name");
@@ -272,101 +144,58 @@ function initMapHandlers() {
 
         region.addEventListener("click", function (e) {
             e.stopPropagation();
-            zoomToRegion(this);
+            isZoomed = true;
+            hideRegionTooltip();
+
+            // Убираем подсветку со всех регионов и добавляем текущему
+            document.querySelectorAll(".region").forEach(r => r.classList.remove("active-region"));
+            this.classList.add("active-region");
+
+            // Показываем кнопку "вернуться"
+            const backBtn = document.getElementById('back-btn');
+            if (backBtn) backBtn.classList.add('visible');
+
+            const bbox = this.getBBox();
+            const padding = 12;
+            const targetX = bbox.x - padding;
+            const targetY = bbox.y - padding;
+            const targetWidth = bbox.width + padding * 2;
+            const targetHeight = bbox.height + padding * 2;
+
+            zoomToBox(targetX, targetY, targetWidth, targetHeight);
         });
     });
 
-    // Обработчики для каждого ГОРОДА (наведение + клик)
+    // Навешиваем обработчики клика на каждый ГОРОД
     document.querySelectorAll(".city-group").forEach(cityGroup => {
-        const getCityName = (el) => {
-            return el.dataset.city || 
-                   el.getAttribute("data-city") || 
-                   el.querySelector(".city-dot")?.getAttribute("data-city") ||
-                   el.querySelector(".city-label")?.textContent?.trim() || "";
-        };
-
-        // Наведение мыши на город — всплывает название
-        cityGroup.addEventListener("mouseenter", function (e) {
-            e.stopPropagation();
-            const name = getCityName(this);
-            showCityTooltip(e, name);
-        });
-
-        cityGroup.addEventListener("mousemove", function (e) {
-            e.stopPropagation();
-            const tooltip = document.getElementById("region-tooltip");
-            if (tooltip && tooltip.classList.contains("visible")) {
-                tooltip.style.left = `${e.clientX}px`;
-                tooltip.style.top = `${e.clientY}px`;
-            }
-        });
-
-        cityGroup.addEventListener("mouseleave", function (e) {
-            e.stopPropagation();
-            hideRegionTooltip();
-        });
-
-        // Клик по группе города
         cityGroup.addEventListener("click", function (e) {
             e.stopPropagation();
-            const cityName = getCityName(this);
-            const dot = this.querySelector(".city-dot");
-            handleCityClick(cityName, dot);
-        });
-    });
+            isZoomed = true;
+            hideRegionTooltip();
 
-    // Прямой обработчик клика на каждый circle.city-dot
-    document.querySelectorAll(".city-dot").forEach(dot => {
-        dot.addEventListener("click", function (e) {
-            e.stopPropagation();
-            const cityGroup = this.closest(".city-group");
-            const cityName = cityGroup?.dataset?.city || this.getAttribute("data-city") || "";
-            handleCityClick(cityName, this);
+            // 1. Вызываем функцию выбора города
+            selectCity(this.dataset.city);
+
+            const bbox = this.getBBox();
+            const padding = 20;
+            const targetX = bbox.x - padding;
+            const targetY = bbox.y - padding;
+            const targetWidth = bbox.width + padding * 2;
+            const targetHeight = bbox.height + padding * 2;
+
+            zoomToBox(targetX, targetY, targetWidth, targetHeight);
         });
     });
 
     // Сброс масштаба при клике на свободное место карты
-    svg.addEventListener("click", (e) => {
-        if (e.target === svg || e.target.id === "map-background") {
-            resetMapView();
-        }
-    });
-}
-
-/**
- * Загрузка SVG-карты из отдельного файла russia-map.svg
- */
-async function loadMapSvg() {
-    const container = document.getElementById("map-container");
-    if (!container) return;
-
-    let svgText = null;
-
-    // 1. Попытка загрузить russia-map.svg через fetch (работает при запуске через локальный веб-сервер)
-    try {
-        const response = await fetch("russia-map.svg");
-        if (response.ok) {
-            svgText = await response.text();
-        }
-    } catch (e) {
-        // При открытии напрямую через file:// браузер блокирует fetch из-за CORS
+    if (svg) {
+        svg.addEventListener("click", (e) => {
+            if (e.target === svg || e.target.id === "map-background") {
+                resetMapView();
+            }
+        });
     }
 
-    // 2. Fallback для запуска через file:// (открытие index.html напрямую двойным кликом)
-    if (!svgText && window.RUSSIA_MAP_SVG) {
-        svgText = window.RUSSIA_MAP_SVG;
-    }
-
-    if (svgText) {
-        container.innerHTML = svgText;
-        initMapHandlers();
-    } else {
-        console.error("Не удалось загрузить SVG карту.");
-    }
-}
-
-document.addEventListener("DOMContentLoaded", async () => {
-    await loadMapSvg();
     addEgeSubject();
 });
 
@@ -464,7 +293,7 @@ function updateSidebarUnis() {
     if (!selectedCity || !uniData[selectedCity]) return;
 
     const totalScore = Number(document.getElementById('total-ege-score').innerText) || 0;
-    const studyType = document.querySelector('input[name="studyType"]:checked').value;
+    const studyType = document.querySelector('input[name="studyType"]:checked')?.value || 'budget';
     const listContainer = document.getElementById('sidebar-unis-list');
     listContainer.innerHTML = '';
 
@@ -474,26 +303,30 @@ function updateSidebarUnis() {
         
         const uniCard = document.createElement('div');
         uniCard.className = 'uni-item';
-        uniCard.onclick = () => showUniInfo(uni);
         
         uniCard.innerHTML = `
-            <div class="uni-item-name">${uni.name}</div>
-            <div class="uni-item-info">
-                <span>Мин. балл: <strong>${reqScore}</strong></span>
-                ${totalScore > 0 ? `<span class="${isPassing ? 'badge-pass' : 'badge-fail'}">${isPassing ? 'Проходит' : 'Не хватает'}</span>` : ''}
+            <div class="uni-item-header">
+                <div class="uni-item-name">${uni.name}</div>
+                <div class="uni-item-info">
+                    <span>Мин. балл (${studyType === 'budget' ? 'бюджет' : 'платное'}): <strong>${reqScore}</strong></span>
+                    ${totalScore > 0 ? `<span class="${isPassing ? 'badge-pass' : 'badge-fail'}">${isPassing ? 'Проходит' : 'Не хватает'}</span>` : ''}
+                </div>
+            </div>
+            <div class="uni-item-details">
+                <div class="uni-detail-row"><strong>Баллы:</strong> ${uni.score} (бюджет) / ${uni.paidScore} (платное)</div>
+                <div class="uni-detail-row"><strong>Специальности:</strong> ${uni.specs}</div>
             </div>
         `;
+
+        // Клик раскрывает подробности ВУЗа прямо в списке
+        uniCard.addEventListener('click', () => {
+            uniCard.classList.toggle('is-expanded');
+        });
+
         listContainer.appendChild(uniCard);
     });
 }
 
-// Показ деталей ВУЗа
-function showUniInfo(uni) {
-    document.getElementById('uni-name').innerText = uni.name;
-    document.getElementById('uni-score').innerText = `${uni.score} (бюджет) / ${uni.paidScore} (платное)`;
-    document.getElementById('uni-specs').innerText = uni.specs;
-    document.getElementById('info-panel').classList.add('visible');
-}
 
 // Сброс выбора
 function resetMapView() {
@@ -510,22 +343,40 @@ function resetMapView() {
     const backBtn = document.getElementById('back-btn');
     if (backBtn) backBtn.classList.remove('visible');
 
-    const infoPanel = document.getElementById('info-panel');
-    if (infoPanel) infoPanel.classList.remove('visible');
-
     const svg = document.getElementById("russia-map");
     if (svg) animateViewBox(svg, "0 0 800 500", 600);
     
     // Снимаем подсветку региона
     document.querySelectorAll('.region').forEach(r => r.classList.remove('active-region'));
     
-    // Возвращаем все города в исходное состояние
+    // Возвращаем все города, точки и подписи в исходный вид
     document.querySelectorAll(".city-group").forEach(city => {
         city.classList.remove("in-active-region");
         city.style.opacity = "1";
         city.style.pointerEvents = "auto";
-        city.style.transform = "scale(1)";
+        city.style.transform = "";
+        city.style.transformOrigin = "";
+
+        const dot = city.querySelector(".city-dot");
+        if (dot) {
+            const isTop = city.classList.contains("is-top");
+            dot.setAttribute("r", isTop ? "3.2" : "2.2");
+            dot.style.strokeWidth = "";
+        }
+
+        const label = city.querySelector(".city-label");
+        if (label) {
+            label.style.fontSize = "";
+            label.style.strokeWidth = "";
+        }
     });
+
+    const sheetTitle = document.getElementById("sheet-title");
+    const sheetSubtitle = document.getElementById("sheet-subtitle");
+    const sheetCountBadge = document.getElementById("sheet-count-badge");
+    if (sheetTitle) sheetTitle.innerText = "Калькулятор и ВУЗы";
+    if (sheetSubtitle) sheetSubtitle.innerText = "Нажмите или потяните вверх";
+    if (sheetCountBadge) sheetCountBadge.style.display = "none";
 }
 
 // Список доступных предметов ЕГЭ

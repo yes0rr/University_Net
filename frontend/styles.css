@@ -13,6 +13,7 @@ body {
 }
 
 #app-container {
+    --sidebar-width: 380px;
     display: flex;
     width: 100vw;
     height: 100vh;
@@ -76,66 +77,74 @@ body {
 }
 
 .city-group {
-    transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.5s ease;
+    transition: opacity 0.3s ease;
     cursor: pointer;
 }
 
-/* Точки главных городов регионов с контрастной обводкой */
+/* Точки городов на карте */
 .city-dot {
     fill: #38bdf8;
     stroke: #0f172a;
-    stroke-width: 1.4px;
+    stroke-width: 0.8px;
     paint-order: stroke fill;
-    vector-effect: non-scaling-stroke;
-    r: 3.5;
+    opacity: 0.8;
     cursor: pointer;
-    transition: fill 0.2s ease, stroke 0.2s ease, r 0.2s ease;
+    transition: fill 0.2s ease, stroke 0.2s ease, opacity 0.2s ease;
 }
 
 .city-dot.is-top {
-    fill: #38bdf8;
-    stroke: #0f172a;
-    stroke-width: 1.5px;
-    r: 3.8;
+    fill: #60a5fa;
+    stroke: #ffffff;
+    stroke-width: 1px;
+    opacity: 1;
 }
 
 .city-dot:hover {
     fill: #fbbf24 !important;
     stroke: #ffffff !important;
-    stroke-width: 1.8px !important;
-    r: 5.2;
+    stroke-width: 1.5px !important;
+    opacity: 1 !important;
 }
 
-/* Подписи городов — по умолчанию скрыты, чтобы не накладываться на обзорной карте */
+/* Подписи городов — на общей карте показываем только ключевые региональные центры */
 .city-label {
     display: none;
     fill: #cbd5e1;
-    font-size: 7px;
+    font-size: 6.8px;
     font-family: system-ui, -apple-system, sans-serif;
+    paint-order: stroke fill;
+    stroke: #090e1a;
+    stroke-width: 2px;
+    stroke-linejoin: round;
     pointer-events: none;
     user-select: none;
 }
 
-/* Подписи ключевых региональных центров на общей карте */
 .city-label.is-top {
-    display: block;
+    display: inline;
     fill: #ffffff;
     font-size: 7.5px;
     font-weight: 600;
-    transform: translateY(-5px);
-    text-shadow: 0px 0px 3px #0f172a, 0px 0px 5px #0f172a, 0px 0px 8px #0f172a;
+    paint-order: stroke fill;
+    stroke: #090e1a;
+    stroke-width: 2.2px;
+    stroke-linejoin: round;
     pointer-events: none;
     user-select: none;
 }
 
-/* Подписи городов внутри приближенного активного региона */
+/* В режиме приближения региона: подсвечиваем и показываем подписи всех городов активного региона */
+.city-group.in-active-region .city-dot {
+    opacity: 1 !important;
+}
+
 .city-group.in-active-region .city-label {
-    display: block !important;
-    fill: #ffffff;
-    font-size: 8.5px;
+    display: inline !important;
+    fill: #ffffff !important;
     font-weight: 600;
-    transform: translateY(-6px);
-    text-shadow: 0px 0px 3px #0f172a, 0px 0px 6px #0f172a, 0px 0px 9px #0f172a;
+    paint-order: stroke fill;
+    stroke: #090e1a;
+    stroke-linejoin: round;
     pointer-events: none;
     user-select: none;
 }
@@ -144,20 +153,21 @@ body {
 #region-tooltip {
     position: fixed;
     pointer-events: none;
-    background: rgba(15, 23, 42, 0.95);
-    backdrop-filter: blur(8px);
-    border: 1px solid #3b82f6;
+    background: rgba(15, 23, 42, 0.94);
+    backdrop-filter: blur(6px);
+    border: 1px solid rgba(59, 130, 246, 0.5);
     color: #f8fafc;
-    padding: 6px 12px;
-    border-radius: 6px;
-    font-size: 13px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 11px;
     font-weight: 600;
-    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.6);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
     z-index: 9999;
     opacity: 0;
-    transform: translate(-50%, -135%);
-    transition: opacity 0.15s ease;
+    transform: translate(-50%, -130%);
+    transition: opacity 0.12s ease;
     white-space: nowrap;
+    line-height: 1.2;
 }
 
 #region-tooltip.visible {
@@ -166,8 +176,8 @@ body {
 
 #back-btn {
     position: absolute;
-    top: 25px;
-    left: 405px;
+    top: 20px;
+    left: calc(var(--sidebar-width) + 20px);
     padding: 12px 22px;
     background-color: #3b82f6;
     color: white;
@@ -181,11 +191,12 @@ body {
     opacity: 0;
     pointer-events: none;
     z-index: 100;
+    touch-action: manipulation;
 }
 
 #back-btn.visible {
-    opacity: 1;
-    pointer-events: auto;
+    opacity: 1 !important;
+    pointer-events: auto !important;
 }
 
 #back-btn:hover {
@@ -193,40 +204,7 @@ body {
     transform: scale(1.03);
 }
 
-#info-panel {
-    position: absolute;
-    top: 25px;
-    right: 25px;
-    width: 320px;
-    background: rgba(15, 23, 42, 0.9);
-    backdrop-filter: blur(12px);
-    border: 1px solid #334155;
-    border-radius: 12px;
-    padding: 20px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-    transform: translateX(120%);
-    transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-    z-index: 100;
-}
 
-#info-panel.visible {
-    transform: translateX(0);
-}
-
-.close-btn {
-    position: absolute;
-    top: 15px;
-    right: 15px;
-    background: none;
-    border: none;
-    color: #94a3b8;
-    font-size: 20px;
-    cursor: pointer;
-}
-
-.close-btn:hover {
-    color: white;
-}
 
 /* Стили формы сайдбара */
 .auth-section, .ege-section, .unis-section, .sidebar-section {
@@ -432,4 +410,231 @@ body {
 .badge-fail {
     color: #f87171;
     font-weight: 600;
+}
+
+.uni-item-details {
+    display: none;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px dashed #374151;
+    font-size: 12px;
+    color: #cbd5e1;
+    line-height: 1.4;
+}
+
+.uni-item.is-expanded .uni-item-details {
+    display: block;
+}
+
+.uni-detail-row {
+    margin-bottom: 5px;
+}
+
+.uni-detail-row strong {
+    color: #60a5fa;
+}
+
+
+
+/* ========================================================
+   ОТЗЫВЧИВЫЙ ДИЗАЙН И АДАПТИВНОСТЬ ДЛЯ ВСЕХ УСТРОЙСТВ
+   ======================================================== */
+
+.sheet-drag-area {
+    display: none;
+}
+.sidebar-scrollable-content {
+    display: flex;
+    flex-direction: column;
+}
+
+/* Планшеты и компактные ноутбуки (769px - 1024px) */
+@media (max-width: 1024px) and (min-width: 769px) {
+    #region-sidebar, #sidebar {
+        width: 310px;
+        min-width: 310px;
+        padding: 18px 14px;
+    }
+
+    #back-btn {
+        top: 16px;
+        left: calc(310px + 16px);
+        padding: 10px 16px;
+        font-size: 13px;
+    }
+
+    }
+
+/* Смартфоны и узкие экраны (<= 768px): Нативная шторка (Bottom Sheet) */
+@media (max-width: 768px) {
+    html, body {
+        height: 100dvh;
+        height: -webkit-fill-available;
+        overflow: hidden;
+    }
+
+    #app-container {
+        position: relative;
+        width: 100vw;
+        height: 100dvh;
+        height: -webkit-fill-available;
+        overflow: hidden;
+        display: block;
+    }
+
+    /* Карта занимает верхние 2/3 экрана (остается свободной и центрированной) */
+    #map-container {
+        width: 100vw;
+        height: 67dvh;
+        height: calc(-webkit-fill-available * 0.67);
+        position: relative;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    #russia-map {
+        width: 100%;
+        height: 100%;
+        display: block;
+    }
+
+    /* Кнопка сброса масштаба на мобилках */
+    #back-btn {
+        position: fixed;
+        top: 14px;
+        left: 14px;
+        padding: 8px 14px;
+        font-size: 12px;
+        border-radius: 8px;
+        z-index: 400;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+    }
+
+    /* Выдвижная панель (Bottom Sheet): занимает 1/3 экрана в свернутом виде */
+    #region-sidebar, #sidebar {
+        display: flex !important;
+        flex-direction: column;
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        width: 100vw;
+        min-width: 100vw;
+        height: 88dvh;
+        max-height: 88dvh;
+        background: #111827;
+        border-top: 2px solid #3b82f6;
+        border-radius: 20px 20px 0 0;
+        box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.7);
+        z-index: 500;
+        padding: 0 16px 20px 16px;
+        transform: translateY(calc(100% - 33dvh));
+        transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+        overflow: hidden;
+    }
+
+    #region-sidebar.sheet-expanded {
+        transform: translateY(0) !important;
+    }
+
+    /* Зона свайпа / заголовка шторки */
+    .sheet-drag-area {
+        display: block;
+        padding: 12px 0 12px 0;
+        cursor: pointer;
+        z-index: 10;
+        border-bottom: 1px solid rgba(51, 65, 85, 0.5);
+        user-select: none;
+        -webkit-user-select: none;
+        touch-action: none;
+    }
+
+    .sheet-handle {
+        width: 48px;
+        height: 5px;
+        background-color: #64748b;
+        border-radius: 3px;
+        margin: 0 auto 10px auto;
+        transition: background-color 0.2s;
+    }
+
+    .sheet-drag-area:active .sheet-handle {
+        background-color: #94a3b8;
+    }
+
+    .sheet-header-content {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .sheet-header-left {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .sheet-icon {
+        font-size: 24px;
+        line-height: 1;
+    }
+
+    .sheet-title {
+        font-size: 15px;
+        font-weight: 700;
+        color: #f8fafc;
+        line-height: 1.2;
+    }
+
+    .sheet-subtitle {
+        font-size: 12px;
+        color: #94a3b8;
+        margin-top: 2px;
+    }
+
+    .sheet-badge-wrap {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .sheet-count-badge {
+        background: #2563eb;
+        color: white;
+        font-size: 11px;
+        font-weight: 600;
+        padding: 3px 8px;
+        border-radius: 12px;
+    }
+
+    .sheet-toggle-arrow {
+        color: #60a5fa;
+        font-size: 14px;
+        transition: transform 0.3s ease;
+    }
+
+    #region-sidebar.sheet-expanded .sheet-toggle-arrow {
+        transform: rotate(180deg);
+    }
+
+    /* Скроллируемая область контента внутри шторки */
+    .sidebar-scrollable-content {
+        flex: 1;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        padding-top: 14px;
+        padding-bottom: 24px;
+    }
+
+    
+    /* Поля ввода без авто-зума Safari */
+    .form-input, .form-group input, .ege-field select, .ege-field input {
+        font-size: 16px !important;
+    }
+
+    .btn-primary, .btn-add-subject {
+        min-height: 42px;
+    }
 }
