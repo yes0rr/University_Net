@@ -242,8 +242,12 @@ function handleCityClick(cityName, dotEl) {
     }
 }
 
-document.addEventListener("DOMContentLoaded", () => {
+/**
+ * Инициализация всех обработчиков событий интерактивной карты
+ */
+function initMapHandlers() {
     const svg = document.getElementById("russia-map");
+    if (!svg) return;
 
     // Обработчики для каждого РЕГИОНА
     document.querySelectorAll(".region").forEach(region => {
@@ -311,7 +315,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     });
 
-    // Дополнительный прямой обработчик клика на каждый circle.city-dot
+    // Прямой обработчик клика на каждый circle.city-dot
     document.querySelectorAll(".city-dot").forEach(dot => {
         dot.addEventListener("click", function (e) {
             e.stopPropagation();
@@ -322,14 +326,47 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     // Сброс масштаба при клике на свободное место карты
-    if (svg) {
-        svg.addEventListener("click", (e) => {
-            if (e.target === svg || e.target.id === "map-background") {
-                resetMapView();
-            }
-        });
+    svg.addEventListener("click", (e) => {
+        if (e.target === svg || e.target.id === "map-background") {
+            resetMapView();
+        }
+    });
+}
+
+/**
+ * Загрузка SVG-карты из отдельного файла russia-map.svg
+ */
+async function loadMapSvg() {
+    const container = document.getElementById("map-container");
+    if (!container) return;
+
+    let svgText = null;
+
+    // 1. Попытка загрузить russia-map.svg через fetch (работает при запуске через локальный веб-сервер)
+    try {
+        const response = await fetch("russia-map.svg");
+        if (response.ok) {
+            svgText = await response.text();
+        }
+    } catch (e) {
+        // При открытии напрямую через file:// браузер блокирует fetch из-за CORS
     }
 
+    // 2. Fallback для запуска через file:// (открытие index.html напрямую двойным кликом)
+    if (!svgText && window.RUSSIA_MAP_SVG) {
+        svgText = window.RUSSIA_MAP_SVG;
+    }
+
+    if (svgText) {
+        container.innerHTML = svgText;
+        initMapHandlers();
+    } else {
+        console.error("Не удалось загрузить SVG карту.");
+    }
+}
+
+document.addEventListener("DOMContentLoaded", async () => {
+    await loadMapSvg();
     addEgeSubject();
 });
 
