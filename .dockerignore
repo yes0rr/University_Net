@@ -1,0 +1,40 @@
+# Секреты — в образ попадать не должны
+.env
+bot/.env
+*.pem
+*.key
+
+# Git и служебные папки
+.git
+.gitignore
+.github
+
+# Кэш Python и окружения
+.venv
+venv
+__pycache__
+**/__pycache__
+*.py[cod]
+
+# Node нужен только автотесту фронтенда
+node_modules
+package.json
+package-lock.json
+
+# Исходная таблица: данные уже в data/*.json
+*.xlsx
+~$*
+
+# Инструменты разработки
+tools/
+
+# Документация и скрипты запуска
+*.md
+start.bat
+start.sh
+start_bot.bat
+tunnel.bat
+
+# Картинки (кроме карты, она нужна)
+*.png
+*.jpg
