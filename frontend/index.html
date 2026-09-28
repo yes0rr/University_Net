@@ -103,6 +103,12 @@
 
     <!-- Контейнер для интерактивной SVG-карты -->
     <div id="map-container">
+        <!-- Кнопки управления масштабом -->
+        <div class="map-controls" id="map-controls">
+            <button type="button" class="map-control-btn" id="btn-zoom-in" title="Приблизить" aria-label="Приблизить">+</button>
+            <button type="button" class="map-control-btn" id="btn-zoom-out" title="Отдалить" aria-label="Отдалить">−</button>
+            <button type="button" class="map-control-btn" id="btn-zoom-reset" title="Сбросить масштаб" aria-label="Сбросить масштаб">⟲</button>
+        </div>
 <svg id="russia-map" viewBox="0 0 800 500" fill="none" xmlns="http://www.w3.org/2000/svg">
     <!-- Фоновый прямоугольник для сброса масштаба -->
     <rect id="map-background" width="100%" height="100%" fill="transparent" />
@@ -806,351 +812,351 @@
                 </defs>
             </g>
                     <g id="cities-layer">
-        <g class="city-group is-top" data-city="Владивосток">
+        <g class="city-group is-top" data-region="Приморский край" data-city="Владивосток">
             <circle class="city-dot is-top" cx="688" cy="450" r="3.2" />
             <text class="city-label is-top" x="688" y="462" text-anchor="middle">Владивосток</text>
         </g>
-        <g class="city-group" data-city="Хабаровск">
+        <g class="city-group" data-region="Хабаровский край" data-city="Хабаровск">
             <circle class="city-dot" cx="683" cy="393" r="2.2" />
             <text class="city-label" x="683" y="388" text-anchor="middle">Хабаровск</text>
         </g>
-        <g class="city-group is-top" data-city="Иркутск">
+        <g class="city-group is-top" data-region="Иркутская область" data-city="Иркутск">
             <circle class="city-dot is-top" cx="476" cy="417" r="3.2" />
             <text class="city-label is-top" x="476" y="429" text-anchor="middle">Иркутск</text>
         </g>
-        <g class="city-group" data-city="Магадан">
+        <g class="city-group" data-region="Магаданская область" data-city="Магадан">
             <circle class="city-dot" cx="691" cy="241" r="2.2" />
             <text class="city-label" x="691" y="236" text-anchor="middle">Магадан</text>
         </g>
-        <g class="city-group" data-city="Анадырь">
+        <g class="city-group" data-region="Чукотский автономный округ" data-city="Анадырь">
             <circle class="city-dot" cx="730" cy="103" r="2.2" />
             <text class="city-label" x="730" y="98" text-anchor="middle">Анадырь</text>
         </g>
-        <g class="city-group" data-city="Петропавловск-Камчатский">
+        <g class="city-group" data-region="Камчатский край" data-city="Петропавловск-Камчатский">
             <circle class="city-dot" cx="775" cy="254" r="2.2" />
             <text class="city-label" x="775" y="249" text-anchor="middle">Петропавловск-Камчатский</text>
         </g>
-        <g class="city-group" data-city="Южно-Сахалинск">
+        <g class="city-group" data-region="Сахалинская область" data-city="Южно-Сахалинск">
             <circle class="city-dot" cx="734" cy="372" r="2.2" />
             <text class="city-label" x="734" y="384" text-anchor="middle">Южно-Сахалинск</text>
         </g>
-        <g class="city-group" data-city="Якутск">
+        <g class="city-group" data-region="Республика Саха (Якутия)" data-city="Якутск">
             <circle class="city-dot" cx="583" cy="281" r="2.2" />
             <text class="city-label" x="583" y="276" text-anchor="middle">Якутск</text>
         </g>
-        <g class="city-group" data-city="Улан-Удэ">
+        <g class="city-group" data-region="Республика Бурятия" data-city="Улан-Удэ">
             <circle class="city-dot" cx="492" cy="419" r="2.2" />
             <text class="city-label" x="492" y="431" text-anchor="middle">Улан-Удэ</text>
         </g>
-        <g class="city-group" data-city="Кызыл">
+        <g class="city-group" data-region="Республика Тыва" data-city="Кызыл">
             <circle class="city-dot" cx="410" cy="422" r="2.2" />
             <text class="city-label" x="410" y="434" text-anchor="middle">Кызыл</text>
         </g>
-        <g class="city-group is-top" data-city="Красноярск">
+        <g class="city-group is-top" data-region="Красноярский край" data-city="Красноярск">
             <circle class="city-dot is-top" cx="399" cy="376" r="3.2" />
             <text class="city-label is-top" x="399" y="371" text-anchor="middle">Красноярск</text>
         </g>
-        <g class="city-group" data-city="Абакан">
+        <g class="city-group" data-region="Республика Хакасия" data-city="Абакан">
             <circle class="city-dot" cx="387" cy="398" r="2.2" />
             <text class="city-label" x="387" y="410" text-anchor="middle">Абакан</text>
         </g>
-        <g class="city-group" data-city="Томск">
+        <g class="city-group" data-region="Томская область" data-city="Томск">
             <circle class="city-dot" cx="352" cy="361" r="2.2" />
             <text class="city-label" x="352" y="356" text-anchor="middle">Томск</text>
         </g>
-        <g class="city-group" data-city="Горно-Алтайск">
+        <g class="city-group" data-region="Республика Алтай" data-city="Горно-Алтайск">
             <circle class="city-dot" cx="347" cy="419" r="2.2" />
             <text class="city-label" x="347" y="431" text-anchor="middle">Горно-Алтайск</text>
         </g>
-        <g class="city-group" data-city="Барнаул">
+        <g class="city-group" data-region="Алтайский край" data-city="Барнаул">
             <circle class="city-dot" cx="341" cy="397" r="2.2" />
             <text class="city-label" x="341" y="392" text-anchor="middle">Барнаул</text>
         </g>
-        <g class="city-group" data-city="Кемерово">
+        <g class="city-group" data-region="Кемеровская область" data-city="Кемерово">
             <circle class="city-dot" cx="361" cy="382" r="2.2" />
             <text class="city-label" x="361" y="377" text-anchor="middle">Кемерово</text>
         </g>
-        <g class="city-group is-top" data-city="Новосибирск">
+        <g class="city-group is-top" data-region="Новосибирская область" data-city="Новосибирск">
             <circle class="city-dot is-top" cx="339" cy="377" r="3.2" />
             <text class="city-label is-top" x="339" y="372" text-anchor="middle">Новосибирск</text>
         </g>
-        <g class="city-group" data-city="Омск">
+        <g class="city-group" data-region="Омская область" data-city="Омск">
             <circle class="city-dot" cx="283" cy="360" r="2.2" />
             <text class="city-label" x="283" y="355" text-anchor="middle">Омск</text>
         </g>
-        <g class="city-group" data-city="Тюмень">
+        <g class="city-group" data-region="Тюменская область" data-city="Тюмень">
             <circle class="city-dot" cx="251" cy="323" r="2.2" />
             <text class="city-label" x="251" y="318" text-anchor="middle">Тюмень</text>
         </g>
-        <g class="city-group" data-city="Курган">
+        <g class="city-group" data-region="Курганская область" data-city="Курган">
             <circle class="city-dot" cx="241" cy="338" r="2.2" />
             <text class="city-label" x="241" y="350" text-anchor="middle">Курган</text>
         </g>
-        <g class="city-group" data-city="Челябинск">
+        <g class="city-group" data-region="Челябинская область" data-city="Челябинск">
             <circle class="city-dot" cx="217" cy="327" r="2.2" />
             <text class="city-label" x="217" y="339" text-anchor="middle">Челябинск</text>
         </g>
-        <g class="city-group is-top" data-city="Екатеринбург">
+        <g class="city-group is-top" data-region="Свердловская область" data-city="Екатеринбург">
             <circle class="city-dot is-top" cx="226" cy="308" r="3.2" />
             <text class="city-label is-top" x="226" y="303" text-anchor="middle">Екатеринбург</text>
         </g>
-        <g class="city-group" data-city="Ханты-Мансийск">
+        <g class="city-group" data-region="Ханты-Мансийский АО — Югра" data-city="Ханты-Мансийск">
             <circle class="city-dot" cx="289" cy="294" r="2.2" />
             <text class="city-label" x="289" y="289" text-anchor="middle">Ханты-Мансийск</text>
         </g>
-        <g class="city-group" data-city="Салехард">
+        <g class="city-group" data-region="Ямало-Ненецкий автономный округ" data-city="Салехард">
             <circle class="city-dot" cx="300" cy="235" r="2.2" />
             <text class="city-label" x="300" y="230" text-anchor="middle">Салехард</text>
         </g>
-        <g class="city-group" data-city="Нарьян-Мар">
+        <g class="city-group" data-region="Ненецкий автономный округ" data-city="Нарьян-Мар">
             <circle class="city-dot" cx="259" cy="193" r="2.2" />
             <text class="city-label" x="259" y="188" text-anchor="middle">Нарьян-Мар</text>
         </g>
-        <g class="city-group" data-city="Сыктывкар">
+        <g class="city-group" data-region="Республика Коми" data-city="Сыктывкар">
             <circle class="city-dot" cx="209" cy="236" r="2.2" />
             <text class="city-label" x="209" y="231" text-anchor="middle">Сыктывкар</text>
         </g>
-        <g class="city-group" data-city="Киров">
+        <g class="city-group" data-region="Кировская область" data-city="Киров">
             <circle class="city-dot" cx="183" cy="261" r="2.2" />
             <text class="city-label" x="183" y="256" text-anchor="middle">Киров</text>
         </g>
-        <g class="city-group" data-city="Пермь">
+        <g class="city-group" data-region="Пермский край" data-city="Пермь">
             <circle class="city-dot" cx="208" cy="285" r="2.2" />
             <text class="city-label" x="208" y="297" text-anchor="middle">Пермь</text>
         </g>
-        <g class="city-group" data-city="Уфа">
+        <g class="city-group" data-region="Республика Башкортостан" data-city="Уфа">
             <circle class="city-dot" cx="187" cy="313" r="2.2" />
             <text class="city-label" x="187" y="325" text-anchor="middle">Уфа</text>
         </g>
-        <g class="city-group" data-city="Оренбург">
+        <g class="city-group" data-region="Оренбургская область" data-city="Оренбург">
             <circle class="city-dot" cx="164" cy="335" r="2.2" />
             <text class="city-label" x="164" y="347" text-anchor="middle">Оренбург</text>
         </g>
-        <g class="city-group" data-city="Самара">
+        <g class="city-group" data-region="Самарская область" data-city="Самара">
             <circle class="city-dot" cx="149" cy="306" r="2.2" />
             <text class="city-label" x="149" y="318" text-anchor="middle">Самара</text>
         </g>
-        <g class="city-group" data-city="Ижевск">
+        <g class="city-group" data-region="Удмуртская Республика" data-city="Ижевск">
             <circle class="city-dot" cx="185" cy="285" r="2.2" />
             <text class="city-label" x="185" y="280" text-anchor="middle">Ижевск</text>
         </g>
-        <g class="city-group" data-city="Ульяновск">
+        <g class="city-group" data-region="Ульяновская область" data-city="Ульяновск">
             <circle class="city-dot" cx="147" cy="289" r="2.2" />
             <text class="city-label" x="147" y="301" text-anchor="middle">Ульяновск</text>
         </g>
-        <g class="city-group is-top" data-city="Казань">
+        <g class="city-group is-top" data-region="Республика Татарстан" data-city="Казань">
             <circle class="city-dot is-top" cx="163" cy="280" r="3.2" />
             <text class="city-label is-top" x="163" y="275" text-anchor="middle">Казань</text>
         </g>
-        <g class="city-group" data-city="Архангельск">
+        <g class="city-group" data-region="Архангельская область" data-city="Архангельск">
             <circle class="city-dot" cx="197" cy="180" r="2.2" />
             <text class="city-label" x="197" y="175" text-anchor="middle">Архангельск</text>
         </g>
-        <g class="city-group" data-city="Мурманск">
+        <g class="city-group" data-region="Мурманская область" data-city="Мурманск">
             <circle class="city-dot" cx="212" cy="126" r="2.2" />
             <text class="city-label" x="212" y="121" text-anchor="middle">Мурманск</text>
         </g>
-        <g class="city-group is-top" data-city="Санкт-Петербург">
+        <g class="city-group is-top" data-region="Санкт-Петербург" data-city="Санкт-Петербург">
             <circle class="city-dot is-top" cx="138" cy="180" r="3.2" />
             <text class="city-label is-top" x="138" y="172" dx="0" dy="-4" text-anchor="middle">Санкт-Петербург</text>
         </g>
-        <g class="city-group" data-city="Петрозаводск">
+        <g class="city-group" data-region="Республика Карелия" data-city="Петрозаводск">
             <circle class="city-dot" cx="156" cy="172" r="2.2" />
             <text class="city-label" x="156" y="167" text-anchor="middle">Петрозаводск</text>
         </g>
-        <g class="city-group" data-city="Чита">
+        <g class="city-group" data-region="Забайкальский край" data-city="Чита">
             <circle class="city-dot" cx="532" cy="409" r="2.2" />
             <text class="city-label" x="532" y="403" text-anchor="middle">Чита</text>
         </g>
-        <g class="city-group" data-city="Благовещенск">
+        <g class="city-group" data-region="Амурская область" data-city="Благовещенск">
             <circle class="city-dot" cx="626" cy="398" r="2.2" />
             <text class="city-label" x="626" y="392" text-anchor="middle">Благовещенск</text>
         </g>
-        <g class="city-group" data-city="Биробиджан">
+        <g class="city-group" data-region="Еврейская автономная область" data-city="Биробиджан">
             <circle class="city-dot" cx="667" cy="398" r="2.2" />
             <text class="city-label" x="667" y="392" text-anchor="middle">Биробиджан</text>
         </g>
-        <g class="city-group is-top" data-city="Калининград">
+        <g class="city-group is-top" data-region="Калининградская область" data-city="Калининград">
             <circle class="city-dot is-top" cx="49" cy="152" r="3.2" />
             <text class="city-label is-top" x="49" y="147" text-anchor="middle">Калининград</text>
         </g>
-        <g class="city-group" data-city="Великий Новгород">
+        <g class="city-group" data-region="Новгородская область" data-city="Великий Новгород">
             <circle class="city-dot" cx="113" cy="184" r="2.2" />
             <text class="city-label" x="113" y="184" dx="5" dy="3" text-anchor="start">Великий Новгород</text>
         </g>
-        <g class="city-group" data-city="Псков">
+        <g class="city-group" data-region="Псковская область" data-city="Псков">
             <circle class="city-dot" cx="105" cy="172" r="2.2" />
             <text class="city-label" x="105" y="172" dx="-5" dy="3" text-anchor="end">Псков</text>
         </g>
-        <g class="city-group" data-city="Вологда">
+        <g class="city-group" data-region="Вологодская область" data-city="Вологда">
             <circle class="city-dot" cx="151" cy="218" r="2.2" />
             <text class="city-label" x="151" y="218" dx="5" dy="3" text-anchor="start">Вологда</text>
         </g>
-        <g class="city-group" data-city="Кострома">
+        <g class="city-group" data-region="Костромская область" data-city="Кострома">
             <circle class="city-dot" cx="146" cy="232" r="2.2" />
             <text class="city-label" x="146" y="232" dx="5" dy="3" text-anchor="start">Кострома</text>
         </g>
-        <g class="city-group" data-city="Иваново">
+        <g class="city-group" data-region="Ивановская область" data-city="Иваново">
             <circle class="city-dot" cx="138" cy="237" r="2.2" />
             <text class="city-label" x="138" y="237" dx="5" dy="3" text-anchor="start">Иваново</text>
         </g>
-        <g class="city-group" data-city="Ярославль">
+        <g class="city-group" data-region="Ярославская область" data-city="Ярославль">
             <circle class="city-dot" cx="140" cy="225" r="2.2" />
             <text class="city-label" x="140" y="225" dx="5" dy="-2" text-anchor="start">Ярославль</text>
         </g>
-        <g class="city-group" data-city="Тверь">
+        <g class="city-group" data-region="Тверская область" data-city="Тверь">
             <circle class="city-dot" cx="114" cy="213" r="2.2" />
             <text class="city-label" x="114" y="213" dx="-5" dy="3" text-anchor="end">Тверь</text>
         </g>
-        <g class="city-group" data-city="Смоленск">
+        <g class="city-group" data-region="Смоленская область" data-city="Смоленск">
             <circle class="city-dot" cx="85" cy="211" r="2.2" />
             <text class="city-label" x="85" y="211" dx="-5" dy="3" text-anchor="end">Смоленск</text>
         </g>
-        <g class="city-group" data-city="Владимир">
+        <g class="city-group" data-region="Владимирская область" data-city="Владимир">
             <circle class="city-dot" cx="127" cy="240" r="2.2" />
             <text class="city-label" x="127" y="240" dx="5" dy="3" text-anchor="start">Владимир</text>
         </g>
-        <g class="city-group" data-city="Белгород">
+        <g class="city-group" data-region="Белгородская область" data-city="Белгород">
             <circle class="city-dot" cx="66" cy="261" r="2.2" />
             <text class="city-label" x="66" y="261" dx="-5" dy="3" text-anchor="end">Белгород</text>
         </g>
-        <g class="city-group" data-city="Воронеж">
+        <g class="city-group" data-region="Воронежская область" data-city="Воронеж">
             <circle class="city-dot" cx="88" cy="269" r="2.2" />
             <text class="city-label" x="88" y="281" text-anchor="middle">Воронеж</text>
         </g>
-        <g class="city-group" data-city="Тамбов">
+        <g class="city-group" data-region="Тамбовская область" data-city="Тамбов">
             <circle class="city-dot" cx="106" cy="270" r="2.2" />
             <text class="city-label" x="106" y="270" dx="5" dy="3" text-anchor="start">Тамбов</text>
         </g>
-        <g class="city-group" data-city="Липецк">
+        <g class="city-group" data-region="Липецкая область" data-city="Липецк">
             <circle class="city-dot" cx="94" cy="264" r="2.2" />
             <text class="city-label" x="94" y="264" dx="5" dy="-3" text-anchor="start">Липецк</text>
         </g>
-        <g class="city-group" data-city="Рязань">
+        <g class="city-group" data-region="Рязанская область" data-city="Рязань">
             <circle class="city-dot" cx="111" cy="250" r="2.2" />
             <text class="city-label" x="111" y="250" dx="5" dy="3" text-anchor="start">Рязань</text>
         </g>
-        <g class="city-group" data-city="Тула">
+        <g class="city-group" data-region="Тульская область" data-city="Тула">
             <circle class="city-dot" cx="101" cy="243" r="2.2" />
             <text class="city-label" x="101" y="243" dx="-5" dy="3" text-anchor="end">Тула</text>
         </g>
-        <g class="city-group" data-city="Орел">
+        <g class="city-group" data-region="Орловская область" data-city="Орел">
             <circle class="city-dot" cx="84" cy="243" r="2.2" />
             <text class="city-label" x="84" y="243" dx="-5" dy="3" text-anchor="end">Орел</text>
         </g>
-        <g class="city-group" data-city="Курск">
+        <g class="city-group" data-region="Курская область" data-city="Курск">
             <circle class="city-dot" cx="73" cy="249" r="2.2" />
             <text class="city-label" x="73" y="249" dx="-5" dy="3" text-anchor="end">Курск</text>
         </g>
-        <g class="city-group" data-city="Брянск">
+        <g class="city-group" data-region="Брянская область" data-city="Брянск">
             <circle class="city-dot" cx="76" cy="230" r="2.2" />
             <text class="city-label" x="76" y="230" dx="-5" dy="3" text-anchor="end">Брянск</text>
         </g>
-        <g class="city-group" data-city="Калуга">
+        <g class="city-group" data-region="Калужская область" data-city="Калуга">
             <circle class="city-dot" cx="99" cy="231" r="2.2" />
             <text class="city-label" x="99" y="231" dx="-5" dy="-3" text-anchor="end">Калуга</text>
         </g>
-        <g class="city-group is-top" data-city="Москва">
+        <g class="city-group is-top" data-region="Москва" data-city="Москва">
             <circle class="city-dot is-top" cx="113" cy="233" r="3.2" />
             <text class="city-label is-top" x="113" y="228" text-anchor="middle">Москва</text>
         </g>
-        <g class="city-group" data-city="Нижний Новгород">
+        <g class="city-group" data-region="Нижегородская область" data-city="Нижний Новгород">
             <circle class="city-dot" cx="145" cy="255" r="2.2" />
             <text class="city-label" x="145" y="255" dx="0" dy="-5" text-anchor="middle">Нижний Новгород</text>
         </g>
-        <g class="city-group" data-city="Йошкар-Ола">
+        <g class="city-group" data-region="Республика Марий Эл" data-city="Йошкар-Ола">
             <circle class="city-dot" cx="159" cy="266" r="2.2" />
             <text class="city-label" x="159" y="266" dx="5" dy="-2" text-anchor="start">Йошкар-Ола</text>
         </g>
-        <g class="city-group" data-city="Чебоксары">
+        <g class="city-group" data-region="Чувашская Республика" data-city="Чебоксары">
             <circle class="city-dot" cx="153" cy="270" r="2.2" />
             <text class="city-label" x="153" y="270" dx="5" dy="6" text-anchor="start">Чебоксары</text>
         </g>
-        <g class="city-group" data-city="Саранск">
+        <g class="city-group" data-region="Республика Мордовия" data-city="Саранск">
             <circle class="city-dot" cx="133" cy="277" r="2.2" />
             <text class="city-label" x="133" y="277" dx="-5" dy="-2" text-anchor="end">Саранск</text>
         </g>
-        <g class="city-group" data-city="Пенза">
+        <g class="city-group" data-region="Пензенская область" data-city="Пенза">
             <circle class="city-dot" cx="125" cy="284" r="2.2" />
             <text class="city-label" x="125" y="284" dx="-5" dy="6" text-anchor="end">Пенза</text>
         </g>
-        <g class="city-group" data-city="Саратов">
+        <g class="city-group" data-region="Саратовская область" data-city="Саратов">
             <circle class="city-dot" cx="117" cy="299" r="2.2" />
             <text class="city-label" x="117" y="299" dx="-5" dy="2" text-anchor="end">Саратов</text>
         </g>
-        <g class="city-group" data-city="Волгоград">
+        <g class="city-group" data-region="Волгоградская область" data-city="Волгоград">
             <circle class="city-dot" cx="92" cy="313" r="2.2" />
             <text class="city-label" x="92" y="313" dx="5" dy="-2" text-anchor="start">Волгоград</text>
         </g>
-        <g class="city-group" data-city="Астрахань">
+        <g class="city-group" data-region="Астраханская область" data-city="Астрахань">
             <circle class="city-dot" cx="92" cy="351" r="2.2" />
             <text class="city-label" x="92" y="351" dx="5" dy="2" text-anchor="start">Астрахань</text>
         </g>
-        <g class="city-group" data-city="Элиста">
+        <g class="city-group" data-region="Республика Калмыкия" data-city="Элиста">
             <circle class="city-dot" cx="69" cy="333" r="2.2" />
             <text class="city-label" x="69" y="333" dx="5" dy="2" text-anchor="start">Элиста</text>
         </g>
-        <g class="city-group" data-city="Луганск">
+        <g class="city-group" data-region="Луганск" data-city="Луганск">
             <circle class="city-dot" cx="64" cy="286" r="2.2" />
             <text class="city-label" x="64" y="286" dx="5" dy="2" text-anchor="start">Луганск</text>
         </g>
-        <g class="city-group" data-city="Донецк">
+        <g class="city-group" data-region="Донецк" data-city="Донецк">
             <circle class="city-dot" cx="48" cy="283" r="2.2" />
             <text class="city-label" x="48" y="283" dx="-5" dy="-4" text-anchor="end">Донецк</text>
         </g>
-        <g class="city-group" data-city="Мелитополь">
+        <g class="city-group" data-region="Мелитополь" data-city="Мелитополь">
             <circle class="city-dot" cx="31" cy="274" r="2.2" />
             <text class="city-label" x="31" y="274" dx="0" dy="8" text-anchor="middle">Мелитополь</text>
         </g>
-        <g class="city-group" data-city="Геническ">
+        <g class="city-group" data-region="Геническ" data-city="Геническ">
             <circle class="city-dot" cx="23" cy="274" r="2.2" />
             <text class="city-label" x="23" y="274" dx="0" dy="-5" text-anchor="middle">Геническ</text>
         </g>
-        <g class="city-group" data-city="Симферополь">
+        <g class="city-group" data-region="Республика Крым" data-city="Симферополь">
             <circle class="city-dot" cx="7" cy="276" r="2.2" />
             <text class="city-label" x="7" y="276" dx="5" dy="-2" text-anchor="start">Симферополь</text>
         </g>
-        <g class="city-group" data-city="Севастополь">
+        <g class="city-group" data-region="Республика Крым" data-city="Севастополь">
             <circle class="city-dot" cx="2" cy="283" r="2.2" />
             <text class="city-label" x="2" y="283" dx="4" dy="7" text-anchor="start">Севастополь</text>
         </g>
-        <g class="city-group is-top" data-city="Ростов-на-Дону">
+        <g class="city-group is-top" data-region="Ростовская область" data-city="Ростов-на-Дону">
             <circle class="city-dot is-top" cx="55" cy="301" r="3.2" />
             <text class="city-label is-top" x="55" y="301" dx="5" dy="3" text-anchor="start">Ростов-на-Дону</text>
         </g>
-        <g class="city-group" data-city="Краснодар">
+        <g class="city-group" data-region="Краснодарский край" data-city="Краснодар">
             <circle class="city-dot" cx="32" cy="309" r="2.2" />
             <text class="city-label" x="32" y="309" dx="-5" dy="-2" text-anchor="end">Краснодар</text>
         </g>
-        <g class="city-group" data-city="Майкоп">
+        <g class="city-group" data-region="Республика Адыгея" data-city="Майкоп">
             <circle class="city-dot" cx="34" cy="323" r="2.2" />
             <text class="city-label" x="34" y="323" dx="-5" dy="3" text-anchor="end">Майкоп</text>
         </g>
-        <g class="city-group" data-city="Ставрополь">
+        <g class="city-group" data-region="Ставропольский край" data-city="Ставрополь">
             <circle class="city-dot" cx="50" cy="334" r="2.2" />
             <text class="city-label" x="50" y="334" dx="5" dy="-3" text-anchor="start">Ставрополь</text>
         </g>
-        <g class="city-group" data-city="Черкесск">
+        <g class="city-group" data-region="Карачаево-Черкесская Республика" data-city="Черкесск">
             <circle class="city-dot" cx="40" cy="338" r="2.2" />
             <text class="city-label" x="40" y="338" dx="-5" dy="2" text-anchor="end">Черкесск</text>
         </g>
-        <g class="city-group" data-city="Нальчик">
+        <g class="city-group" data-region="Кабардино-Балкарская Республика" data-city="Нальчик">
             <circle class="city-dot" cx="43" cy="350" r="2.2" />
             <text class="city-label" x="43" y="350" dx="-5" dy="2" text-anchor="end">Нальчик</text>
         </g>
-        <g class="city-group" data-city="Владикавказ">
+        <g class="city-group" data-region="Республика Северная Осетия — Алания" data-city="Владикавказ">
             <circle class="city-dot" cx="45" cy="361" r="2.2" />
             <text class="city-label" x="45" y="361" dx="-4" dy="8" text-anchor="end">Владикавказ</text>
         </g>
-        <g class="city-group" data-city="Магас">
+        <g class="city-group" data-region="Республика Ингушетия" data-city="Магас">
             <circle class="city-dot" cx="50" cy="360" r="2.2" />
             <text class="city-label" x="50" y="360" dx="0" dy="-5" text-anchor="middle">Магас</text>
         </g>
-        <g class="city-group" data-city="Грозный">
+        <g class="city-group" data-region="Чеченская Республика" data-city="Грозный">
             <circle class="city-dot" cx="56" cy="362" r="2.2" />
             <text class="city-label" x="56" y="362" dx="4" dy="8" text-anchor="start">Грозный</text>
         </g>
-        <g class="city-group" data-city="Махачкала">
+        <g class="city-group" data-region="Республика Дагестан" data-city="Махачкала">
             <circle class="city-dot" cx="61" cy="374" r="2.2" />
             <text class="city-label" x="61" y="374" dx="5" dy="3" text-anchor="start">Махачкала</text>
         </g>
