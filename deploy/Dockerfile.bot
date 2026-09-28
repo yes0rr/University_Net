@@ -1,0 +1,29 @@
+# ─────────────────────────────────────────────────────────────────────────────
+#  Чат-бот для MAX: long polling к platform-api2.max.ru.
+#
+#  Важно про сертификат: образ собран на Linux, где в системном хранилище нет
+#  сертификата Минцифры. Поэтому сертификат лежит внутри образа (bot/certs/)
+#  и подмешивается к набору certifi при старте — см. bot/bot.py.
+#  Ничего доустанавливать на сервере не нужно.
+#
+#  Токен НЕ попадает в образ: он передаётся переменной окружения при запуске
+#  (в compose.yaml это env_file: bot/.env). Файл bot/.env исключён в .dockerignore.
+# ─────────────────────────────────────────────────────────────────────────────
+
+FROM python:3.12-slim
+
+# Не создавать .pyc, не буферизовать вывод — логи видны сразу
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+
+WORKDIR /app
+
+# Сначала зависимости — так слой кэшируется и повторные сборки быстрые
+COPY bot/requirements.txt /app/requirements.txt
+RUN pip install --no-cache-dir --upgrade pip \
+ && pip install --no-cache-dir -r /app/requirements.txt
+
+# Затем код и сертификат
+COPY bot/ /app/
+
+CMD ["python", "bot.py"]

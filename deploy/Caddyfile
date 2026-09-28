@@ -1,0 +1,27 @@
+# Caddy — веб-сервер с автоматическим HTTPS.
+# Адрес берётся из переменной DOMAIN (задаётся в .env рядом с compose.yaml).
+# Сертификат Let's Encrypt запрашивается и продлевается автоматически.
+
+{$DOMAIN} {
+	root * /srv
+	encode gzip
+
+	# Заголовки, которые ждёт мини-приложение внутри MAX:
+	# страница должна иметь право открываться во фрейме.
+	header {
+		# Разрешаем встраивание в вебвью мессенджера
+		-Server
+		X-Content-Type-Options "nosniff"
+	}
+
+	# JSON с данными — не кэшируем, чтобы правки подхватывались сразу
+	@json path *.json
+	header @json Cache-Control "no-store"
+
+	file_server
+
+	log {
+		output stdout
+		format console
+	}
+}

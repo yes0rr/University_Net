@@ -1,0 +1,50 @@
+# ─────────────────────────────────────────────────────────────────────────────
+#  University_Net — все компоненты решения одной командой
+#
+#  Запуск:   docker compose up -d --build
+#  Остановка: docker compose down
+#  Логи:      docker compose logs -f
+#
+#  Переменные берутся из файла .env рядом с этим файлом (создать из .env.example).
+# ─────────────────────────────────────────────────────────────────────────────
+
+services:
+
+  # ── Мини-приложение: статика + автоматический HTTPS ────────────────────────
+  # Caddy сам запрашивает и обновляет сертификат Let's Encrypt.
+  # Ничего настраивать вручную для HTTPS не нужно.
+  web:
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile.web
+    container_name: university_net_web
+    restart: unless-stopped
+    environment:
+      DOMAIN: ${DOMAIN:?Укажите DOMAIN в файле .env}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - caddy_data:/data          # здесь хранятся сертификаты — не удалять
+      - caddy_config:/config
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # ── Чат-бот для MAX ────────────────────────────────────────────────────────
+  # Держит long polling к platform-api2.max.ru и отвечает пользователям.
+  # Токен берётся из bot/.env — в образ он не попадает (см. .dockerignore).
+  bot:
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile.bot
+    container_name: university_net_bot
+    restart: unless-stopped
+    env_file:
+      - bot/.env
+
+volumes:
+  caddy_data:
+  caddy_config:
