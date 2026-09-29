@@ -75,6 +75,11 @@ API = "https://platform-api2.max.ru"          # старый platform-api.max.ru
 TOKEN = os.environ.get("MAX_BOT_TOKEN", "")
 BOT_NAME = os.environ.get("MAX_BOT_NAME", "")  # username бота, например t401_hakaton_max_bot
 
+# Публичный адрес мини-приложения (боевой стенд).
+# Используется кнопкой-ссылкой — она открывает приложение в MAX сразу,
+# не дожидаясь привязки URL к боту на платформе MAX для партнёров.
+MINI_APP_URL = os.environ.get("MINI_APP_URL", "https://45-153-69-132.sslip.io")
+
 if not TOKEN:
     raise SystemExit("Нет токена. Создайте файл .env со строкой MAX_BOT_TOKEN=...")
 
@@ -114,16 +119,24 @@ def send(chat_id: int, text: str, buttons=None) -> dict:
 
 
 # ── Клавиатура ───────────────────────────────────────────────────────────────
-# Тип кнопки open_app открывает мини-приложение внутри чат-бота.
-# Обязательное поле web_app — публичное имя бота, к которому привязано приложение.
+# Два способа открыть приложение:
+#   link      — кнопка-ссылка на публичный адрес стенда. Работает уже сейчас
+#               и в мобильном приложении MAX, и в веб-версии, и в браузере.
+#   open_app  — нативная кнопка мини-приложения. Поле web_app принимает
+#               публичное имя бота, к которому привязано мини-приложение.
+#               Включается после того, как URL привязан к боту (t401).
 
 def main_keyboard():
-    row = [{"type": "open_app", "text": "Подобрать вуз", "web_app": BOT_NAME}]
-    rows = [row]
+    rows = []
+
+    if MINI_APP_URL:
+        rows.append([{"type": "link", "text": "Подобрать вуз",
+                      "url": MINI_APP_URL}])
+
     if BOT_NAME:
-        # Запасной вариант: ссылка на мини-приложение. Работает и в веб-версии MAX.
-        rows.append([{"type": "link", "text": "Открыть в браузере",
-                      "url": f"https://max.ru/{BOT_NAME}?startapp"}])
+        rows.append([{"type": "open_app", "text": "Открыть в MAX",
+                      "web_app": BOT_NAME}])
+
     rows.append([{"type": "callback", "text": "Что умеет бот", "payload": "about"}])
     return rows
 
@@ -230,8 +243,13 @@ def main():
     if not check_token():
         raise SystemExit("Запуск отменён — токен не прошёл проверку.")
 
+    if MINI_APP_URL:
+        log.info("Адрес приложения для кнопки-ссылки: %s", MINI_APP_URL)
+    else:
+        log.warning("MINI_APP_URL не задан — кнопка «Подобрать вуз» не появится")
+
     if not BOT_NAME:
-        log.warning("MAX_BOT_NAME не задан — кнопка мини-приложения не появится")
+        log.warning("MAX_BOT_NAME не задан — кнопка «Открыть в MAX» не появится")
 
     log.info("Слушаю сообщения. Напишите боту в MAX. Остановить: Ctrl+C")
 
