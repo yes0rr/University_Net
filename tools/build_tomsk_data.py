@@ -1,20 +1,23 @@
 #!/usr/bin/env python3
 """
-Генератор frontend/data.js из таблицы Vuzanet(1).xlsx.
+Генератор frontend/data.js — базы вузов по городам.
 
-Запуск (из корня проекта):
-    python tools/build_tomsk_data.py
+Сейчас файл собирает только window.uniData: справочную базу «город → вузы»
+для городов, по которым подробных данных ещё нет.
 
-Что делает:
-  1. читает листы «Баллы вузов» и «Направления и Спецы»;
-  2. собирает структуру window.TOMSK_DATA;
-  3. берёт UNIVERSITIES_DB из main.py и добавляет его как window.uniData
-     (в script.js эта переменная используется, но нигде не была объявлена);
-  4. дописывает логику из tools/tomsk_frontend.js;
-  5. сохраняет результат в frontend/data.js.
+ПОДРОБНЫЕ ДАННЫЕ ЗДЕСЬ БОЛЬШЕ НЕ СОБИРАЮТСЯ. Баллы, направления и предметы
+ЕГЭ лежат в папке data/ отдельными файлами и подгружаются в браузере через
+frontend/data-loader.js:
 
-Файл frontend/data.js генерируется — правки в нём вручную затрёт
-следующий запуск этого скрипта. Правь tools/tomsk_frontend.js.
+    data/spec_napr.json   справочник направлений (код → название, уровень)
+    data/<город>_2026.json  база города: баллы по направлениям и вузам
+
+Такой файл готовится выгрузкой из информационной системы, а не скриптом.
+Добавить город в интерфейс — значит дописать строку в CITY_REGISTRY
+в frontend/data-loader.js и положить файл в data/.
+
+Запуск:  python tools/build_tomsk_data.py
+Результат: frontend/data.js (перезаписывается)
 """
 
 import ast
@@ -22,6 +25,7 @@ import json
 from pathlib import Path
 
 import openpyxl
+import re
 
 ROOT = Path(__file__).resolve().parent.parent
 XLSX = ROOT / "Vuzanet(1).xlsx"
@@ -119,6 +123,26 @@ def read_combos(wb, specialties: dict) -> list:
     return combos
 
 
+def read_existing_cities() -> dict:
+    """Города, которые уже лежат в data.js, но которых нет в main.py.
+
+    Такие города появились в файле раньше (например, Красногорск и Гатчина).
+    Без этой функции запуск генератора молча стирал бы их из базы.
+    """
+    if not OUT.exists():
+        return {}
+
+    text = OUT.read_text(encoding="utf-8")
+    match = re.search(r"window\.uniData\s*=\s*(\{.*?\n\});", text, re.S)
+    if not match:
+        return {}
+
+    try:
+        return json.loads(match.group(1))
+    except json.JSONDecodeError:
+        return {}
+
+
 def read_uni_base() -> dict:
     """UNIVERSITIES_DB из main.py → структура, которую ждёт script.js."""
     tree = ast.parse(MAIN_PY.read_text(encoding="utf-8"))
@@ -147,63 +171,46 @@ def js(value) -> str:
 
 
 def main():
-    wb = openpyxl.load_workbook(XLSX, data_only=True)
-    specialties = read_specialties(wb)
-    combos = read_combos(wb, specialties)
+    """Собирает frontend/data.js: только window.uniData."""
     uni_base = read_uni_base()
 
-    unique_specialties = set()
-    for c in combos:
-        unique_specialties.update(c["specialties"])
-
-    tomsk = {
-        "city": "Томск",
-        "universities": [{"key": k, "short": s, "full": f} for k, s, f in UNIVERSITIES],
-        "combos": combos,
-        "totalSpecialties": len(unique_specialties),
-    }
-
-    logic = LOGIC_JS.read_text(encoding="utf-8")
+    # Города, которых нет в main.py, но которые уже были в data.js,
+    # сохраняем: иначе запуск генератора их потеряет.
+    extra = []
+    for city, unis in read_existing_cities().items():
+        if city not in uni_base:
+            uni_base[city] = unis
+            extra.append(city)
 
     parts = [
         "/* ==========================================================================",
-        "   data.js — ЕДИНЫЙ ФАЙЛ ДАННЫХ (сгенерирован автоматически)",
+        "   data.js — БАЗА ВУЗОВ ПО ГОРОДАМ (сгенерирован автоматически)",
         "",
         "   НЕ РЕДАКТИРУЙ ВРУЧНУЮ: файл перезаписывается скриптом",
         "       python tools/build_tomsk_data.py",
         "",
-        "   Источники:",
-        "     · Vuzanet(1).xlsx  — баллы и направления вузов Томска",
-        "     · main.py          — UNIVERSITIES_DB (Москва, СПб, Новосибирск,",
-        "                          Казань, Екатеринбург)",
+        "   Источник: main.py — UNIVERSITIES_DB",
         "",
-        f"   Комбинаций предметов: {len(combos)}",
-        f"   Направлений:          {sum(len(c['specialties']) for c in combos)}",
-        f"   Вузов Томска:         {len(UNIVERSITIES)}",
+        "   Подробные данные (баллы, направления, предметы ЕГЭ) здесь не лежат:",
+        "   они в папке data/ и подгружаются через frontend/data-loader.js.",
+        "",
+        f"   Городов в базе: {len(uni_base)}",
         "   ========================================================================== */",
         "",
-        "/* База вузов, которую ждёт script.js. Раньше эта переменная была",
-        "   не объявлена вовсе — из-за этого список вузов не появлялся ни для",
-        "   одного города (ReferenceError при клике). */",
+        "/* Справочная база «город → список вузов» для городов, по которым",
+        "   подробной выгрузки пока нет: script.js показывает её как заглушку. */",
         "window.uniData = " + js(uni_base) + ";",
         "",
-        "/* Данные по вузам Томска из таблицы. Структура:",
-        "     combos[].subjects    — пара предметов, например ['мат', 'инфа']",
-        "     combos[].scores      — ключ вуза → минимальный балл (или null)",
-        "     combos[].specialties — направления, доступные с этой комбинацией */",
-        "window.TOMSK_DATA = " + js(tomsk) + ";",
-        "",
-        logic,
     ]
 
     OUT.write_text("\n".join(parts), encoding="utf-8")
 
-    print(f"✅ {OUT.relative_to(ROOT)}")
-    print(f"   комбинаций: {len(combos)}, "
-          f"направлений: {sum(len(c['specialties']) for c in combos)} "
-          f"(уникальных {len(unique_specialties)}), "
-          f"вузов: {len(UNIVERSITIES)}")
+    print(f"OK {OUT.relative_to(ROOT)}")
     print(f"   базовых городов: {len(uni_base)}")
+    if extra:
+        print("   сохранены города, которых нет в main.py: " + ", ".join(extra))
+        print("     (добавь их в UNIVERSITIES_DB в main.py, чтобы это не повторялось)")
+    print("   подробные данные по городам лежат в data/ и правятся отдельно")
 
 
 if __name__ == "__main__":

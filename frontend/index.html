@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Интерактивная карта ВУЗов России</title>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="styles.css?v=4">
 </head>
 <body>
 
@@ -30,24 +30,38 @@
         </div>
 
         <div class="sidebar-scrollable-content">
-            <!-- Блок регистрации пользователя -->
-            <div class="auth-section">
-                <h3>Регистрация абитуриента</h3>
-                <div id="reg-form" style="display: flex; flex-direction: column; gap: 8px;">
-                    <div class="form-group">
-                        <label>ФИО / Логин</label>
-                        <input type="text" id="reg-name" class="form-input" placeholder="Иван Иванов">
-                    </div>
-                    <div class="form-group">
-                        <label>Email</label>
-                        <input type="email" id="reg-email" class="form-input" placeholder="student@example.ru">
-                    </div>
-                    <button class="btn-primary" onclick="handleRegister()">Сохранить данные</button>
+            <!-- Режим подбора вузов -->
+            <div class="pick-mode-section">
+                <h3>Способ подбора</h3>
+                <div class="pick-mode">
+                    <button type="button" id="pick-mode-subjects" class="pick-mode-btn is-active"
+                            onclick="setPickMode('subjects')">По предметам ЕГЭ</button>
+                    <button type="button" id="pick-mode-directions" class="pick-mode-btn"
+                            onclick="setPickMode('directions')">По направлениям</button>
                 </div>
-                <div id="reg-status" class="user-card" style="display: none;">
-                    <p><strong>Пользователь:</strong> <span id="user-display-name">-</span></p>
-                    <p><strong>Email:</strong> <span id="user-display-email">-</span></p>
-                    <button style="background:none; border:none; color:#ef4444; cursor:pointer; padding:0; margin-top:4px; font-size:11px;" onclick="handleLogout()">Сменить аккаунт</button>
+
+                <!-- Уровень образования общий для обоих режимов:
+                     список заполняет city-panel.js по данным города -->
+                <div class="pick-panel">
+                    <label class="pick-label" for="dir-level">Уровень образования</label>
+                    <select id="dir-level" class="pick-select" onchange="updateSidebarUnis()">
+                        <option value="">Бакалавриат и специалитет</option>
+                    </select>
+
+                    <div class="pick-hint">Приём на бакалавриат и специалитет идёт по баллам ЕГЭ.
+                        Магистратура в подбор не входит: туда поступают после диплома
+                        и по другим экзаменам.</div>
+                </div>
+
+                <!-- Показывается только в режиме «по направлениям» -->
+                <div id="direction-picker" class="pick-panel" style="display: none;">
+                    <label class="pick-label" for="dir-select">Направление подготовки</label>
+                    <select id="dir-select" class="pick-select">
+                        <option value="">— выберите направление —</option>
+                    </select>
+
+                    <div class="pick-hint">Выберите направление — панель покажет вузы города,
+                        где оно есть, и проходные баллы</div>
                 </div>
             </div>
 
@@ -94,6 +108,10 @@
                 <div id="sidebar-unis-list">
                     <p style="font-size: 12px; color: #94a3b8;">Выберите город на карте для просмотра доступных ВУЗов.</p>
                 </div>
+
+                <!-- Подпись сборки: помогает сразу увидеть, свежие ли файлы
+                     загрузил браузер. Заполняет city-panel.js. -->
+                <div id="build-stamp" class="build-stamp"></div>
             </div>
         </div>
     </div>
@@ -996,13 +1014,18 @@
 <div id="region-tooltip" class="region-tooltip"></div>
 
 <!-- Модуль данных карты для поддержки локального file:// протокола -->
-<script src="russia-map.js"></script>
+<!-- Версия сборки: по ней видно, какие файлы загрузил браузер.
+     Если номер в подписи внизу панели отличается — часть файлов устарела. -->
+<script>window.APP_BUILD = "4";</script>
+
+<script src="russia-map.js?v=4"></script>
 <!-- Основной скрипт логики и интерактива -->
-<script src="script.js"></script>
+<script src="script.js?v=4"></script>
 <!-- Данные вузов: база uniData + баллы и направления вузов Томска (из Vuzanet(1).xlsx) -->
-<script src="data.js"></script>
-<!-- Подгрузка тех же данных из data/*.json (правки в JSON видны сразу, без пересборки).
-     Если страница открыта как файл (file://), запрос невозможен — остаются данные из data.js. -->
-<script src="tomsk-loader.js"></script>
-</body>
-</html>
+<script src="data.js?v=4"></script>
+
+<!-- Логика панели: два режима подбора по данным из папки data/ -->
+<script src="city-panel.js?v=4"></script>
+
+<!-- Загрузка баз городов (data/spec_napr.json + data/<город>_2026.json) -->
+<script src="data-loader.js?v=4"></script>

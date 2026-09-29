@@ -18,6 +18,12 @@
 	@json path *.json
 	header @json Cache-Control "no-store"
 
+	# Страницы и код тоже не кэшируем. Иначе после обновления сайта браузер
+	# отдаёт старые script.js и city-panel.js, и панель работает по прежней
+	# логике: на экране старые цифры, хотя файлы на сервере уже новые.
+	@code path *.html *.js *.css
+	header @code Cache-Control "no-cache"
+
 	file_server
 
 	log {

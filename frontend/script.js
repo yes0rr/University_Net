@@ -21,7 +21,6 @@ let currentViewBox = { x: 0, y: 0, w: 800, h: 500 };
 let isZoomed = false;
 let selectedCity = null;
 let activeRegion = null;
-let currentUser = null;
 let animFrameId = null;
 
 // Флаг для предотвращения срабатывания клика после перетаскивания (панорамирования)
@@ -160,8 +159,10 @@ function updateMapDisplay(viewBox) {
 
     // 2. ОТОБРАЖЕНИЕ НАЗВАНИЙ (Layer 3)
     // ТОЛЬКО для Москвы, Санкт-Петербурга, Томска и Казани!
-    const fontScreenPx = 11.5;
-    const selFontScreenPx = 13.0;
+    // Размер подобран так, чтобы подписи не спорили с картой; выделенный
+    // город чуть крупнее остальных.
+    const fontScreenPx = 10.0;
+    const selFontScreenPx = 11.5;
 
     cityRegistry.forEach(item => {
         if (!item.label) return;
@@ -188,7 +189,7 @@ function updateMapDisplay(viewBox) {
 
         const fontPx = isSel ? selFontScreenPx : fontScreenPx;
         const fontSvg = fontPx / scale;
-        const strokeSvg = (isSel ? 2.6 : 2.1) / scale;
+        const strokeSvg = (isSel ? 2.1 : 1.7) / scale;
 
         // Текущий экранный радиус точки для отступа текста строго сверху над точкой
         let dotScreenR = 2.0 + 6.5 * Math.pow(zoomProgress, 0.7);
@@ -487,30 +488,6 @@ function initBottomSheet() {
             window.collapseBottomSheet();
         }
     });
-}
-
-// Регистрация
-function handleRegister() {
-    const name = document.getElementById('reg-name').value.trim();
-    const email = document.getElementById('reg-email').value.trim();
-
-    if (!name || !email) {
-        alert('Пожалуйста, заполните имя и email.');
-        return;
-    }
-
-    currentUser = { name, email };
-    document.getElementById('user-display-name').innerText = name;
-    document.getElementById('user-display-email').innerText = email;
-
-    document.getElementById('reg-form').style.display = 'none';
-    document.getElementById('reg-status').style.display = 'block';
-}
-
-function handleLogout() {
-    currentUser = null;
-    document.getElementById('reg-form').style.display = 'flex';
-    document.getElementById('reg-status').style.display = 'none';
 }
 
 // Расчет суммарного балла
@@ -890,7 +867,16 @@ document.addEventListener('DOMContentLoaded', () => {
             item.isHovered = true;
             item.dot.classList.add('is-hovered');
             if (item.label) item.label.classList.add('is-hovered');
-            showRegionTooltip(e, item.name);
+
+            /* Название города показываем один раз. У Москвы, Санкт-Петербурга,
+               Томска и Казани подпись и так стоит на карте — всплывающая
+               подсказка дублировала бы её. У остальных городов подпись скрыта,
+               и подсказка при наведении — единственный способ увидеть название. */
+            const labelShown = item.label &&
+                (item.label.style.opacity === '1' ||
+                 item.label.classList.contains('force-visible'));
+            if (!labelShown) showRegionTooltip(e, item.name);
+
             updateMapDisplay(currentViewBox);
         };
 

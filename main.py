@@ -141,4 +141,19 @@ if DATA_DIR.is_dir():
 # html=True отдаёт frontend/index.html на запрос "/" — раньше здесь стоял
 # FileResponse("templates/index.html"), а такого файла в проекте нет, и
 # главная страница отвечала ошибкой 500.
+# Страницы и код отдаём с запретом кэширования. Без этого браузер держит
+# старые script.js и city-panel.js и после обновления файлов показывает
+# прежнюю логику: цифры на экране не совпадают с содержимым папки frontend.
+# Картинки и шрифты кэшировать не мешаем — они не меняются.
+NO_CACHE_SUFFIXES = (".html", ".js", ".css")
+
+
+@app.middleware("http")
+async def no_cache_for_code(request, call_next):
+    response = await call_next(request)
+    if request.url.path == "/" or request.url.path.endswith(NO_CACHE_SUFFIXES):
+        response.headers["Cache-Control"] = "no-cache"
+    return response
+
+
 app.mount("/", StaticFiles(directory=str(FRONTEND_DIR), html=True), name="frontend")

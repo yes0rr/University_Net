@@ -115,16 +115,18 @@ body {
     transition: fill 0.15s ease, stroke 0.15s ease;
 }
 
+/* Жёлтого на карте нет: подсветка и выбор города — в синей гамме.
+   Наведение — светло-голубая точка, выбранный город — белая. */
 .city-dot:hover, .city-dot.is-hovered {
-    fill: #fbbf24 !important;
+    fill: #7dd3fc !important;
     stroke: #ffffff !important;
     stroke-width: 1.4px !important;
     opacity: 1 !important;
 }
 
 .city-dot.is-selected {
-    fill: #f59e0b !important;
-    stroke: #ffffff !important;
+    fill: #ffffff !important;
+    stroke: #38bdf8 !important;
     stroke-width: 1.8px !important;
     opacity: 1 !important;
 }
@@ -154,8 +156,9 @@ body {
     font-weight: 600;
 }
 
+/* При наведении подпись только проявляется. Жёлтой она была раньше и спорила
+   с всплывающей подсказкой — одну и ту же строку было видно дважды. */
 .city-label:hover, .city-label.is-hovered {
-    fill: #fbbf24 !important;
     opacity: 1 !important;
 }
 
@@ -187,9 +190,12 @@ body {
     backdrop-filter: blur(6px);
     border: 1px solid rgba(59, 130, 246, 0.5);
     color: #f8fafc;
-    padding: 3px 8px;
+    padding: 3px 7px;
     border-radius: 4px;
-    font-size: 11px;
+    /* Тот же шрифт, что у подписей в SVG: иначе название выводилось
+       двумя разными шрифтами на одном экране. */
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 10px;
     font-weight: 600;
     box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
     z-index: 9999;
@@ -237,76 +243,25 @@ body {
 
 
 /* Стили формы сайдбара */
-.auth-section, .ege-section, .unis-section, .sidebar-section {
+.ege-section, .unis-section, .sidebar-section {
     margin-bottom: 24px;
     border-bottom: 1px solid #1f2937;
     padding-bottom: 20px;
 }
 
-.auth-section:last-child, .ege-section:last-child, .unis-section:last-child, .sidebar-section:last-child {
+.ege-section:last-child, .unis-section:last-child, .sidebar-section:last-child {
     border-bottom: none;
     margin-bottom: 0;
     padding-bottom: 0;
 }
 
-.auth-section h3, .ege-section h3, .unis-section h3, .sidebar-section h3 {
+.ege-section h3, .unis-section h3, .sidebar-section h3 {
     font-size: 15px;
     font-weight: 600;
     color: #60a5fa;
     margin-bottom: 14px;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-}
-
-.form-group {
-    margin-bottom: 12px;
-}
-
-.form-group label {
-    display: block;
-    font-size: 12px;
-    color: #94a3b8;
-    margin-bottom: 4px;
-}
-
-.form-input, .form-group input {
-    width: 100%;
-    padding: 10px 14px;
-    background-color: #1f2937;
-    border: 1px solid #374151;
-    border-radius: 6px;
-    color: white;
-    font-size: 14px;
-    outline: none;
-    transition: border-color 0.2s;
-}
-
-.form-input:focus, .form-group input:focus {
-    border-color: #3b82f6;
-}
-
-.user-card {
-    background-color: #1f2937;
-    border: 1px solid #374151;
-    border-radius: 6px;
-    padding: 10px 12px;
-    font-size: 13px;
-}
-
-.btn-primary {
-    width: 100%;
-    padding: 10px;
-    background-color: #3b82f6;
-    color: white;
-    border: none;
-    border-radius: 6px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background-color 0.2s;
-}
-
-.btn-primary:hover {
-    background-color: #2563eb;
 }
 
 .study-type-group, .radio-group {
@@ -476,6 +431,186 @@ body {
 .sidebar-scrollable-content {
     display: flex;
     flex-direction: column;
+}
+
+/* ============================================================================
+   Способ подбора: переключатель «по предметам» / «по направлениям»
+   ========================================================================== */
+
+.pick-mode-section {
+    padding: 14px 16px;
+    border-bottom: 1px solid #1e293b;
+}
+
+.pick-mode {
+    display: flex;
+    gap: 8px;
+    margin-top: 4px;
+}
+
+.pick-mode-btn {
+    flex: 1;
+    padding: 9px 6px;
+    background: #1e293b;
+    color: #94a3b8;
+    border: 1px solid #334155;
+    border-radius: 7px;
+    font-size: 11.5px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background .15s, color .15s, border-color .15s;
+}
+
+.pick-mode-btn:hover {
+    color: #e2e8f0;
+    border-color: #475569;
+}
+
+.pick-mode-btn.is-active {
+    background: #2563eb;
+    border-color: #2563eb;
+    color: #ffffff;
+}
+
+/* Выпадающие списки направлений */
+.pick-panel {
+    margin-top: 10px;
+    padding: 10px;
+    background: #111827;
+    border: 1px solid #374151;
+    border-radius: 8px;
+}
+
+.pick-label {
+    display: block;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    color: #94a3b8;
+    margin-bottom: 6px;
+}
+
+.pick-select {
+    width: 100%;
+    padding: 8px;
+    background: #1f2937;
+    color: #f8fafc;
+    border: 1px solid #374151;
+    border-radius: 6px;
+    font-size: 12px;
+    margin-bottom: 8px;
+}
+
+.pick-hint {
+    margin-top: 2px;
+    font-size: 11px;
+    color: #94a3b8;
+    line-height: 1.4;
+}
+
+/* Ярлык уровня образования рядом с названием направления */
+.level-tag {
+    display: inline-block;
+    margin-left: 5px;
+    padding: 0 5px;
+    border: 1px solid #334155;
+    border-radius: 3px;
+    font-size: 9.5px;
+    font-weight: 600;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: .03em;
+    vertical-align: 1px;
+    white-space: nowrap;
+}
+
+/* Подпись сборки внизу панели */
+.build-stamp {
+    margin-top: 12px;
+    padding-top: 8px;
+    border-top: 1px solid #1e293b;
+    font-size: 10px;
+    color: #475569;
+    text-align: center;
+    letter-spacing: .02em;
+}
+
+.build-stamp.is-stale {
+    color: #fca5a5;
+    font-weight: 600;
+}
+
+/* Предупреждение: предметы ЕГЭ не подходят под выбранное направление */
+.city-warn {
+    margin: 10px 0 0;
+    padding: 9px 11px;
+    background: rgba(248, 113, 113, .1);
+    border-left: 3px solid #f87171;
+    border-radius: 4px;
+    font-size: 11.5px;
+    color: #fca5a5;
+    line-height: 1.55;
+}
+
+.city-warn strong {
+    color: #fecaca;
+}
+
+/* Сводка и служебные строки панели */
+.city-summary {
+    margin: 0 0 10px;
+    padding: 8px 10px;
+    background: #1e293b;
+    border-left: 3px solid #3b82f6;
+    border-radius: 4px;
+    font-size: 12px;
+    color: #cbd5e1;
+    line-height: 1.5;
+}
+
+.city-count {
+    margin: 0 0 8px;
+    font-size: 11px;
+    color: #94a3b8;
+}
+
+.city-empty {
+    margin: 0;
+    padding: 12px;
+    background: #1e293b;
+    border: 1px dashed #334155;
+    border-radius: 8px;
+    font-size: 12px;
+    color: #94a3b8;
+    text-align: center;
+    line-height: 1.5;
+}
+
+.city-none {
+    color: #94a3b8;
+    font-style: italic;
+}
+
+.city-more {
+    color: #64748b;
+    font-style: italic;
+}
+
+/* Пояснение под списком: почему программ показано меньше, чем в базе */
+.city-note {
+    margin: 10px 0 0;
+    padding: 8px 10px;
+    background: #111827;
+    border-left: 3px solid #475569;
+    border-radius: 4px;
+    font-size: 11px;
+    color: #94a3b8;
+    line-height: 1.5;
+}
+
+.badge-bvi {
+    background: rgba(16, 185, 129, .15);
+    color: #10b981;
 }
 
 /* Планшеты и компактные ноутбуки (769px - 1024px) */
@@ -660,11 +795,11 @@ body {
 
     
     /* Поля ввода без авто-зума Safari */
-    .form-input, .form-group input, .ege-field select, .ege-field input {
+    .ege-field select, .ege-field input {
         font-size: 16px !important;
     }
 
-    .btn-primary, .btn-add-subject {
+    .btn-add-subject {
         min-height: 42px;
     }
 }
