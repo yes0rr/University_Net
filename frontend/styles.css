@@ -46,6 +46,14 @@ body {
     align-items: center;
     justify-content: center;
     overflow: hidden;
+    touch-action: none; /* Разрешает жесты зума и перемещения без прокрутки страницы */
+    user-select: none;
+    -webkit-user-select: none;
+    cursor: grab;
+}
+
+#map-container.is-panning {
+    cursor: grabbing !important;
 }
 
 #russia-map {
@@ -81,72 +89,94 @@ body {
     cursor: pointer;
 }
 
-/* Точки городов на карте */
+/* ==========================================================================
+   Слои карты в стиле Photoshop (Photoshop-style SVG Layers)
+   Нижний слой: #map-paths (контуры регионов)
+   Средний слой: #cities-dots-layer (точки городов)
+   Верхний слой: #cities-labels-layer (названия городов)
+   ========================================================================== */
+
+#map-paths {
+    pointer-events: auto;
+}
+
+/* Слой 2: Точки городов (единый аккуратный размер и стиль для всех городов) */
+#cities-dots-layer {
+    pointer-events: auto;
+}
+
 .city-dot {
     fill: #38bdf8;
-    stroke: #0f172a;
+    stroke: #070c18;
     stroke-width: 0.8px;
     paint-order: stroke fill;
-    opacity: 0.8;
+    opacity: 0.95;
     cursor: pointer;
-    transition: fill 0.2s ease, stroke 0.2s ease, opacity 0.2s ease;
+    transition: fill 0.15s ease, stroke 0.15s ease;
 }
 
-.city-dot.is-top {
-    fill: #60a5fa;
-    stroke: #ffffff;
-    stroke-width: 1px;
-    opacity: 1;
-}
-
-.city-dot:hover {
+.city-dot:hover, .city-dot.is-hovered {
     fill: #fbbf24 !important;
     stroke: #ffffff !important;
-    stroke-width: 1.5px !important;
+    stroke-width: 1.4px !important;
     opacity: 1 !important;
 }
 
-/* Подписи городов — на общей карте показываем только ключевые региональные центры */
+.city-dot.is-selected {
+    fill: #f59e0b !important;
+    stroke: #ffffff !important;
+    stroke-width: 1.8px !important;
+    opacity: 1 !important;
+}
+
+/* Слой 3: Названия городов (всегда на самом верхнем слое) */
+#cities-labels-layer {
+    pointer-events: auto;
+}
+
 .city-label {
-    display: none;
-    fill: #cbd5e1;
-    font-size: 6.8px;
-    font-family: system-ui, -apple-system, sans-serif;
+    fill: #f1f5f9;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-weight: 500;
     paint-order: stroke fill;
-    stroke: #090e1a;
-    stroke-width: 2px;
+    stroke: #070b14;
     stroke-linejoin: round;
-    pointer-events: none;
+    stroke-linecap: round;
+    pointer-events: auto;
+    cursor: pointer;
     user-select: none;
+    opacity: 0; /* Управляется умным алгоритмом предотвращения коллизий */
+    transition: opacity 0.22s ease, fill 0.15s ease;
 }
 
 .city-label.is-top {
-    display: inline;
     fill: #ffffff;
-    font-size: 7.5px;
     font-weight: 600;
-    paint-order: stroke fill;
-    stroke: #090e1a;
-    stroke-width: 2.2px;
-    stroke-linejoin: round;
-    pointer-events: none;
-    user-select: none;
 }
 
-/* В режиме приближения региона: подсвечиваем и показываем подписи всех городов активного региона */
-.city-group.in-active-region .city-dot {
+.city-label:hover, .city-label.is-hovered {
+    fill: #fbbf24 !important;
     opacity: 1 !important;
 }
 
-.city-group.in-active-region .city-label {
-    display: inline !important;
+.city-label.is-selected {
+    fill: #38bdf8 !important;
+    font-weight: 700 !important;
+    opacity: 1 !important;
+}
+
+.city-label.force-visible {
+    opacity: 1 !important;
+}
+
+.city-dot.in-active-region {
+    opacity: 1 !important;
+    fill: #60a5fa !important;
+}
+
+.city-label.in-active-region {
+    opacity: 1 !important;
     fill: #ffffff !important;
-    font-weight: 600;
-    paint-order: stroke fill;
-    stroke: #090e1a;
-    stroke-linejoin: round;
-    pointer-events: none;
-    user-select: none;
 }
 
 /* Тултип с названием региона / города при наведении */
