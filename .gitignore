@@ -1,0 +1,22 @@
+# Секреты — в репозиторий не попадают
+.env
+bot/.env
+*.pem
+*.key
+*.crt.local
+
+# Служебные файлы Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Node нужен только автотесту фронтенда
+node_modules/
+package.json
+package-lock.json
+
+# Служебные файлы Office и системы
+~$*
+.DS_Store
+Thumbs.db
