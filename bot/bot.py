@@ -130,6 +130,19 @@ def state_of(chat_id: int) -> dict:
     return STATE.setdefault(chat_id, dict(EMPTY_STATE))
 
 
+# Нажатие кнопки в MAX может прийти БЕЗ объекта message (поле необязательное).
+# Тогда chat_id взять неоткуда — и раньше бот молча ничего не отвечал. Поэтому
+# запоминаем, какому пользователю какой чат принадлежит, и умеем писать
+# ему напрямую по user_id: для личного диалога MAX API это допускает.
+CHAT_OF_USER: dict = {}
+
+
+def remember_chat(user_id, chat_id):
+    """Запомнить, в каком чате живёт пользователь."""
+    if user_id and chat_id and not isinstance(chat_id, tuple):
+        CHAT_OF_USER[user_id] = chat_id
+
+
 def reset_state(chat_id: int) -> dict:
     STATE[chat_id] = dict(EMPTY_STATE)
     return STATE[chat_id]
@@ -137,8 +150,14 @@ def reset_state(chat_id: int) -> dict:
 
 # ── Отправка сообщений ───────────────────────────────────────────────────────
 
-def send(chat_id: int, text: str, buttons=None) -> dict:
-    """Отправить сообщение в чат. buttons — список рядов inline-клавиатуры."""
+def send(chat_id, text: str, buttons=None) -> dict:
+    """Отправить сообщение. buttons — список рядов inline-клавиатуры.
+
+    chat_id — либо id чата, либо пара ("user_id", id) для случая, когда MAX
+    не сообщил чат (нажатие кнопки без объекта message).
+    """
+    params = {"user_id": chat_id[1]} if isinstance(chat_id, tuple) \
+        else {"chat_id": chat_id}
     body = {"text": text}
     if buttons:
         body["attachments"] = [{
@@ -149,7 +168,7 @@ def send(chat_id: int, text: str, buttons=None) -> dict:
     for attempt in range(3):
         try:
             r = requests.post(f"{API}/messages", headers=HEADERS,
-                              params={"chat_id": chat_id}, json=body, timeout=15,
+                              params=params, json=body, timeout=15,
                               verify=VERIFY)
 
             if r.status_code == 429:          # превышен лимит запросов
@@ -574,27 +593,54 @@ def level_keyboard_call(chat_id: int, st: dict):
 
 def handle_update(u: dict):
     kind = u.get("update_type")
+    log.info("Событие: %s", kind)
 
     if kind == "message_created":
         msg = u.get("message") or {}
         chat_id = (msg.get("recipient") or {}).get("chat_id")
+        user_id = ((msg.get("sender") or {}).get("user_id")
+                   or (msg.get("recipient") or {}).get("user_id"))
         text = ((msg.get("body") or {}).get("text") or "").strip()
+        log.info("Сообщение: chat_id=%s user_id=%s текст=%r", chat_id, user_id, text[:60])
         if not chat_id:
+            log.warning("У сообщения нет chat_id — отвечать некуда")
             return
+        remember_chat(user_id, chat_id)
         handle_text(chat_id, text)
 
     elif kind in ("bot_started", "bot_added"):
         chat_id = u.get("chat_id")
+        user_id = (u.get("user") or {}).get("user_id")
+        if not chat_id and user_id:
+            chat_id = CHAT_OF_USER.get(user_id)
         if chat_id:
+            remember_chat(user_id, chat_id)
             reset_state(chat_id)
             send(chat_id, texts.TEXT_START, main_keyboard())
+        else:
+            log.warning("bot_started без chat_id и без известного пользователя")
 
     elif kind == "message_callback":
         cb = u.get("callback") or {}
+        payload = cb.get("payload") or ""
+        user_id = (cb.get("user") or {}).get("user_id")
         chat_id = ((cb.get("message") or {}).get("recipient") or {}).get("chat_id")
-        if not chat_id:
+        log.info("Кнопка: payload=%r user_id=%s chat_id=%s message=%s",
+                 payload, user_id, chat_id, "есть" if cb.get("message") else "НЕТ")
+
+        if chat_id:
+            remember_chat(user_id, chat_id)
+        elif user_id:
+            # MAX не прислал message — берём чат по памяти или пишем по user_id
+            chat_id = CHAT_OF_USER.get(user_id) or ("user_id", user_id)
+            log.warning("Кнопка без message — отвечаю по user_id=%s", user_id)
+        else:
+            log.error("Нажатие кнопки без chat_id и без user_id — ответить нельзя")
             return
-        handle_callback(chat_id, cb.get("payload") or "", cb.get("callback_id"))
+        handle_callback(chat_id, payload, cb.get("callback_id"))
+
+    else:
+        log.info("Событие типа %s не обрабатывается", kind)
 
 
 # ── Основной цикл (Long Polling) ─────────────────────────────────────────────
