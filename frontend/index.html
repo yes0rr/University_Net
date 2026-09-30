@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Интерактивная карта ВУЗов России</title>
-    <link rel="stylesheet" href="styles.css?v=4">
+    <link rel="stylesheet" href="styles.css?v=5">
 </head>
 <body>
 
@@ -1016,16 +1016,17 @@
 <!-- Модуль данных карты для поддержки локального file:// протокола -->
 <!-- Версия сборки: по ней видно, какие файлы загрузил браузер.
      Если номер в подписи внизу панели отличается — часть файлов устарела. -->
-<script>window.APP_BUILD = "4";</script>
+<script>window.APP_BUILD = "5";</script>
 
-<script src="russia-map.js?v=4"></script>
+<script src="russia-map.js?v=5"></script>
 <!-- Основной скрипт логики и интерактива -->
-<script src="script.js?v=4"></script>
-<!-- Данные вузов: база uniData + баллы и направления вузов Томска (из Vuzanet(1).xlsx) -->
-<script src="data.js?v=4"></script>
+<script src="script.js?v=5"></script>
+<!-- Базы четырёх городов лежат в папке data/ и подгружаются через data-loader.js.
+     Прежней сводной базы data.js (uniData) больше нет: данные есть только
+     по Москве, Санкт-Петербургу, Казани и Томску. -->
 
 <!-- Логика панели: два режима подбора по данным из папки data/ -->
-<script src="city-panel.js?v=4"></script>
+<script src="city-panel.js?v=5"></script>
 
 <!-- Загрузка баз городов (data/spec_napr.json + data/<город>_2026.json) -->
-<script src="data-loader.js?v=4"></script>
+<script src="data-loader.js?v=5"></script>

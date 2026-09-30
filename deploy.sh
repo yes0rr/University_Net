@@ -70,7 +70,8 @@ fi
 echo "Папка: $APPDIR"
 
 FILES_OK=1
-for f in bot/bot.py bot/requirements.txt bot/certs/russian_trusted_root_ca.crt frontend/index.html data/tomsk.json; do
+for f in bot/bot.py bot/requirements.txt bot/certs/russian_trusted_root_ca.crt frontend/index.html \
+         data/spec_napr.json data/moscow.json data/spb.json data/kazan_2026.json data/tomsk.json; do
     [ -f "$f" ] || { echo "   НЕТ: $f"; FILES_OK=0; }
 done
 

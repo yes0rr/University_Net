@@ -364,56 +364,19 @@ function updateSidebarUnis() {
         return;
     }
 
-    const cityUnis = (window.uniData && window.uniData[selectedCity]) ? window.uniData[selectedCity] : null;
-
-    if (!cityUnis || cityUnis.length === 0) {
-        listContainer.innerHTML = `
-            <div style="padding: 16px; background: #1e293b; border-radius: 8px; border: 1px dashed #334155; text-align: center; color: #94a3b8; font-size: 13px;">
-                ВУЗы города <strong>${selectedCity}</strong> добавляются в базу данных.
-            </div>
-        `;
-        const badge = document.getElementById('sheet-count-badge');
-        if (badge) badge.style.display = 'none';
-        return;
-    }
-
-    const totalScore = Number(document.getElementById('total-ege-score')?.innerText) || 0;
-    const studyType = document.querySelector('input[name="studyType"]:checked')?.value || 'budget';
-    listContainer.innerHTML = '';
-
-    cityUnis.forEach(uni => {
-        const reqScore = studyType === 'budget' ? uni.score : uni.paidScore;
-        const isPassing = totalScore > 0 && totalScore >= reqScore;
-
-        const uniCard = document.createElement('div');
-        uniCard.className = 'uni-item';
-
-        uniCard.innerHTML = `
-            <div class="uni-item-header">
-                <div class="uni-item-name">${uni.name}</div>
-                <div class="uni-item-info">
-                    <span>Мин. балл (${studyType === 'budget' ? 'бюджет' : 'платное'}): <strong>${reqScore}</strong></span>
-                    ${totalScore > 0 ? `<span class="${isPassing ? 'badge-pass' : 'badge-fail'}">${isPassing ? 'Проходит' : 'Не хватает'}</span>` : ''}
-                </div>
-            </div>
-            <div class="uni-item-details">
-                <div class="uni-detail-row"><strong>Баллы:</strong> ${uni.score} (бюджет) / ${uni.paidScore} (платное)</div>
-                <div class="uni-detail-row"><strong>Специальности:</strong> ${uni.specs}</div>
-            </div>
-        `;
-
-        uniCard.addEventListener('click', () => {
-            uniCard.classList.toggle('is-expanded');
-        });
-
-        listContainer.appendChild(uniCard);
-    });
-
+    /* Сюда попадают только города без подробной базы: Москву, Санкт-Петербург,
+       Казань и Томск обрабатывает city-panel.js. По остальным городам данных
+       нет и не будет, поэтому вместо списка вузов — понятное объяснение. */
+    const available = Object.keys(window.CITY_REGISTRY || {});
+    listContainer.innerHTML = `
+        <div style="padding: 16px; background: #1e293b; border-radius: 8px; border: 1px dashed #334155; text-align: center; color: #94a3b8; font-size: 13px; line-height: 1.55;">
+            По городу <strong>${selectedCity}</strong> данных нет.<br>
+            Базы собраны по четырём городам:<br>
+            <strong>${available.join(", ") || "—"}</strong>.
+        </div>
+    `;
     const badge = document.getElementById('sheet-count-badge');
-    if (badge) {
-        badge.innerText = `${cityUnis.length} ВУЗов`;
-        badge.style.display = 'inline-block';
-    }
+    if (badge) badge.style.display = 'none';
 }
 
 // Сброс выбора и масштаба карты

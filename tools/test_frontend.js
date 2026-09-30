@@ -3,10 +3,12 @@
  *
  * Проверяет всю новую логику целиком, без запуска браузера:
  *   1) авторизации в интерфейсе и в коде больше нет;
- *   2) данные берутся из папки data/ (spec_napr.json + <город>_2026.json);
+ *   2) данные берутся из папки data/ по четырём городам: Казань, Москва,
+ *      Санкт-Петербург, Томск (spec_napr.json + <город>.json);
+ *   2б) магистратуры нет нигде: ни строк, ни уровней, ни счётчиков;
  *   3) панель вузов умеет два подбора: по предметам ЕГЭ и по направлениям;
  *   4) баллы ЕГЭ дают метки «Проходит / Не хватает», БВИ — метку «БВИ»;
- *   5) города без подробной базы работают по-прежнему (заглушка uniData).
+ *   5) города без базы объясняют, что данных по ним нет.
  *
  * Запуск (нужен Node.js):
  *     npm install jsdom
@@ -211,23 +213,28 @@ async function main() {
     // ─────────────────────────────────────────────────────────────────────────
     section("2. Данные читаются из папки data/");
 
-    check("база вузов (window.uniData) объявлена для городов без подробных данных",
-        typeof window.uniData === "object" && Object.keys(window.uniData).length === 7,
-        typeof window.uniData === "object" ? String(Object.keys(window.uniData).length) : "—");
-    check("в реестре городов есть Казань",
-        !!(window.CITY_REGISTRY && window.CITY_REGISTRY["Казань"]));
+    check("прежней сводной базы uniData больше нет — data.js удалён",
+        typeof window.uniData === "undefined" &&
+        !fs.existsSync(path.join(FRONTEND, "data.js")));
     check("таблицы данных Томска (window.TOMSK_DATA) больше нет",
         typeof window.TOMSK_DATA === "undefined");
+    check("в реестре ровно четыре города: Казань, Москва, Санкт-Петербург, Томск",
+        Object.keys(window.CITY_REGISTRY).sort().join(", ") ===
+        "Казань, Москва, Санкт-Петербург, Томск",
+        Object.keys(window.CITY_REGISTRY).join(", "));
 
     const kazan = await window.loadCityData("Казань");
     check("файлы data/ запрошены по сети",
         fetched.includes("kazan_2026.json") && fetched.includes("spec_napr.json"),
         fetched.join(", "));
-    check("всего разобрано 145 направлений (из 196 строк файла)",
-        kazan.programs.length === 145, String(kazan.programs.length));
-    check("после 11 класса — 103 направления, магистратура отложена отдельно",
-        kazan.egePrograms.length === 103 && kazan.magistracyCount === 42,
-        `${kazan.egePrograms.length} + ${kazan.magistracyCount}`);
+    check("разобрано 103 направления после 11 класса (из 196 строк файла)",
+        kazan.programs.length === 103, String(kazan.programs.length));
+    check("магистратуры в модели нет вообще — ни строки, ни счётчика",
+        kazan.programs.every(p => p.level !== "Магистратура") &&
+        kazan.magistracyCount === undefined && kazan.egePrograms === undefined,
+        "magistracyCount=" + String(kazan.magistracyCount));
+    check("ни один код магистратуры (xx.04.xx) не попал в модель",
+        kazan.programs.every(p => !/\.04\./.test(p.code)));
     check("найдено 6 вузов", kazan.universities.length === 6,
         kazan.universities.map(u => u.short).join(", "));
     check("уровни образования — только те, куда идут по ЕГЭ",
@@ -249,6 +256,57 @@ async function main() {
     check("укрупнённая группа подставлена",
         !!леч && леч.group === "Клиническая медицина",
         леч ? леч.group : "—");
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // ─────────────────────────────────────────────────────────────────────────
+    section("2б. Москва, Санкт-Петербург и Томск — базы из data/");
+
+    /* Эти три базы приехали выгрузкой с точками в названиях вузов: экспорт
+       принял точку за разделитель и разложил столбцы во вложенные объекты.
+       Проверяем, что загрузчик восстанавливает названия и баллы читаются. */
+    const expect = {
+        "Москва":          { unis: 13, programs: 87 },
+        "Санкт-Петербург": { unis: 6,  programs: 88 },
+        "Томск":           { unis: 6,  programs: 82 },
+    };
+    let totalUnis = kazan.universities.length, totalPrograms = kazan.programs.length;
+
+    for (const [city, want] of Object.entries(expect)) {
+        const model = await window.loadCityData(city);
+        totalUnis += model.universities.length;
+        totalPrograms += model.programs.length;
+
+        check(`${city}: ${want.unis} вузов`, model.universities.length === want.unis,
+            model.universities.map(u => u.short).join(", "));
+        check(`${city}: ${want.programs} направлений после 11 класса`,
+            model.programs.length === want.programs, String(model.programs.length));
+        check(`${city}: магистратуры нет ни в одной строке`,
+            model.programs.every(p => !/\.04\./.test(p.code) && p.level !== "Магистратура"),
+            model.levels.join(" / "));
+        check(`${city}: у всех вузов есть короткое и полное название`,
+            model.universities.every(u => u.short && u.full && u.full !== u.short),
+            model.universities.filter(u => !u.full || u.full === u.short)
+                 .map(u => u.short).join(", ") || "—");
+        /* Точки в названиях есть только у московских вузов: у остальных
+           короткие аббревиатуры без точек. */
+        if (city === "Москва") {
+            check("Москва: названия с точками восстановлены целиком, а не обрезаны",
+                model.universities.filter(u => u.short.indexOf(".") !== -1).length === 6,
+                model.universities.filter(u => u.short.indexOf(".") !== -1)
+                     .map(u => u.short).join(", "));
+        }
+        check(`${city}: баллы — числа, а не «-»`,
+            model.programs.some(p => Object.values(p.scores)
+                .some(sk => sk.budget !== null || sk.paid !== null)));
+    }
+
+    check("всего по четырём городам 31 вуз", totalUnis === 31, String(totalUnis));
+    check("всего по четырём городам 360 направлений", totalPrograms === 360,
+        String(totalPrograms));
+    check("МГУ восстановлен из вложенных ключей целиком",
+        (await window.loadCityData("Москва")).universities
+            .some(u => u.short === "МГУ им. М.В. Ломоносова"),
+        (await window.loadCityData("Москва")).universities.map(u => u.short).slice(0, 3).join(", "));
 
     // ─────────────────────────────────────────────────────────────────────────
     section("3. Клик по региону на карте открывает город");
@@ -286,10 +344,9 @@ async function main() {
         !/Магистратура/.test(list().innerText) && !/\.04\./.test(list().innerText));
     check("у каждого балла подписан уровень",
         infoLines.every(t => /Бакалавриат|Специалитет|Нет данных/.test(t)), infoLines[0]);
-    check("внизу списка написано, почему магистратуры нет",
-        /42 программы магистратуры/.test(list().innerText) &&
-        /после диплома/.test(list().innerText),
-        (list().querySelector(".city-note") || { innerText: "плашки нет" }).innerText);
+    check("в панели нет ни строчки про магистратуру",
+        !/магистратур/i.test(list().innerText),
+        (list().innerText.match(/.{0,40}магистратур.{0,40}/i) || ["—"])[0]);
     check("счётчик в шапке: «6 ВУЗов»",
         doc.getElementById("sheet-count-badge").innerText === "6 ВУЗов",
         doc.getElementById("sheet-count-badge").innerText);
@@ -322,10 +379,15 @@ async function main() {
     check("у лучшего балла подписан уровень",
         cards()[0].querySelector(".uni-item-info .level-tag") !== null,
         cards()[0].querySelector(".uni-item-info").innerText);
+    const dirRows = [...cards()[0].querySelectorAll(".uni-detail-row")]
+        .filter(r => /\d{2}\.\d{2}\.\d{2}/.test(r.innerText));
     check("у каждого примера направления подписан уровень",
-        [...cards()[0].querySelectorAll(".uni-detail-row")].every(r =>
-            r.querySelector(".level-tag") || /и ещё/.test(r.innerText)),
-        cards()[0].querySelector(".uni-item-details").innerText.replace(/\n/g, " | ").slice(0, 90));
+        dirRows.length > 0 && dirRows.every(r => r.querySelector(".level-tag")),
+        dirRows[0] ? dirRows[0].innerText.replace(/\n/g, " | ").slice(0, 90)
+                   : "строк с направлениями нет");
+    check("в раскрытии карточки есть полное название вуза",
+        /Вуз: .{15,}/.test(cards()[0].querySelector(".uni-item-details").innerText),
+        (cards()[0].querySelector(".uni-detail-row") || { innerText: "—" }).innerText.slice(0, 70));
 
     setScores([80, 80, 80]);          // сумма 240
     check("сумма баллов = 240",
@@ -442,21 +504,32 @@ async function main() {
     check("выбранное ранее направление больше не мешает", !/Лечебное дело/.test(list().innerText));
 
     // ─────────────────────────────────────────────────────────────────────────
-    section("7. Города без подробной базы работают по-старому");
+    section("7. Города без базы объясняют, где данные есть");
 
-    window.selectCity("Москва");
-    await tick();
-    check("Москва: 3 вуза из uniData", cards().length === 3, String(cards().length));
-    check("заголовок говорит про Москву",
-        /Москв/.test(doc.getElementById("sidebar-region-title").innerText));
-
+    /* Раньше Москва, Новосибирск и другие города брались из data.js. Теперь
+       data.js нет: по этим городам данных не должно быть ни строки, а в
+       сайдбаре — подсказка со списком четырёх городов, по которым базы есть. */
     window.selectCity("Новосибирск");
-    check("Новосибирск: 2 вуза", cards().length === 2, String(cards().length));
-
-    clickRegion("Томская область");   // региона нет ни в одном реестре городов
     await tick();
-    check("регион без данных показывает подсказку, а не чужие вузы",
-        /Выберите город на карте/.test(list().innerText), list().innerText.slice(0, 60));
+    check("Новосибирск: карточек нет, данных по городу нет",
+        cards().length === 0 && /данных нет/.test(list().innerText),
+        list().innerText.replace(/\s+/g, " ").slice(0, 70));
+    check("подсказка называет все четыре города с базами",
+        list().innerText.includes("Москва") &&
+        list().innerText.includes("Санкт-Петербург") &&
+        list().innerText.includes("Казань") &&
+        list().innerText.includes("Томск"),
+        "список городов в подсказке");
+
+    window.selectCity("Екатеринбург");
+    check("Екатеринбург: данных тоже нет", cards().length === 0);
+
+    clickRegion("Республика Татарстан"); // регион с базой ведёт себя как раньше
+    await tick();
+    check("регион с базой открывает город, а не заглушку",
+        /Казан/.test(doc.getElementById("sidebar-region-title").innerText) &&
+        !/данных нет/.test(list().innerText),
+        doc.getElementById("sidebar-region-title").innerText);
 
     // ─────────────────────────────────────────────────────────────────────────
     section("8. Регрессия: заголовок панели написан капсом и город всё равно найден");
@@ -465,7 +538,7 @@ async function main() {
        а заголовок панели — это <h3 id="sidebar-region-title">. Браузер возвращает
        innerText уже преобразованным: «ВУЗЫ ГОРОДА КАЗАНЬ». Из-за этого поиск
        города по точному совпадению не срабатывал и панель откатывалась на
-       старую заглушку uniData — вместо 6 вузов показывался один КФУ. */
+       старую заглушку — вместо 6 вузов показывался один КФУ. */
     setSubjects(["Русский язык"]);               // возвращаем режим обзора
     await tick();
     window.resetMapView();                       // сбрасывает и запомненный город
@@ -676,13 +749,13 @@ async function main() {
             .map(src => (src.match(/\?v=(\d+)/) || [])[1]).filter(Boolean)).size === 1,
         scriptTags.join(", "));
 
-    check("в разметке объявлена версия сборки", window.APP_BUILD === "4", window.APP_BUILD);
+    check("в разметке объявлена версия сборки", window.APP_BUILD === "5", window.APP_BUILD);
     check("панель и загрузчик данных той же версии",
-        window.__BUILDS && window.__BUILDS.panel === "4" && window.__BUILDS.data === "4",
+        window.__BUILDS && window.__BUILDS.panel === "5" && window.__BUILDS.data === "5",
         JSON.stringify(window.__BUILDS));
 
     const stamp = doc.getElementById("build-stamp");
-    check("внизу панели есть подпись сборки", !!stamp && /Сборка 4/.test(stamp.textContent),
+    check("внизу панели есть подпись сборки", !!stamp && /Сборка 5/.test(stamp.textContent),
         stamp ? stamp.textContent : "нет элемента");
     check("подпись не в тревожном состоянии — файлы совпадают",
         stamp && !stamp.classList.contains("is-stale"), stamp ? stamp.className : "—");

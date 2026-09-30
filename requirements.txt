@@ -5,6 +5,5 @@
 fastapi
 uvicorn[standard]
 
-# Чтение таблицы Vuzanet(1).xlsx — нужен только для генератора
-# tools/build_tomsk_data.py, для запуска самого сайта не требуется
-openpyxl
+# Данные лежат в data/*.json и читаются браузером напрямую,
+# поэтому библиотек для Excel здесь нет

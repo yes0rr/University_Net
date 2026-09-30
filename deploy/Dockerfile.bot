@@ -26,4 +26,9 @@ RUN pip install --no-cache-dir --upgrade pip \
 # Затем код и сертификат
 COPY bot/ /app/
 
+# Данные городов: бот подбирает вузы по баллам прямо в чате, поэтому
+# файлы data/*.json должны лежать внутри образа (bot/vuzdata.py ищет их
+# в /app/data). Без этой строки подбор по баллам отвечает ошибкой.
+COPY data/ /app/data/
+
 CMD ["python", "bot.py"]

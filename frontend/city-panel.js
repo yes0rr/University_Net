@@ -24,7 +24,7 @@
 
     /* Версия файла. Если браузер загрузил из кэша старую панель, номер не
        совпадёт с остальными — подпись внизу панели скажет об этом прямо. */
-    var BUILD = "4";
+    var BUILD = "5";
     (window.__BUILDS = window.__BUILDS || {}).panel = BUILD;
 
     var originalUpdateSidebarUnis = window.updateSidebarUnis;
@@ -127,6 +127,19 @@
         return many;
     }
 
+    /* Короткое название вуза в заголовке карточки, полное — в раскрытии.
+       В Москве 13 вузов с длинными названиями: если писать их целиком в
+       заголовок, карточка становится нечитаемой. */
+    function uniTitle(uni) {
+        return esc(uni.short);
+    }
+
+    function uniFullRow(uni) {
+        if (!uni.full || uni.full === uni.short) return "";
+        return '<div class="uni-detail-row"><strong>Вуз:</strong> ' +
+               esc(uni.full) + "</div>";
+    }
+
     /* Ярлык уровня образования. Баллы на бакалавриате и специалитете разные,
        поэтому у каждой строки с баллом должно быть видно, к чему он относится. */
     function levelTag(level) {
@@ -154,7 +167,7 @@
             if (level && lvl !== level) return;
 
             var scores = [];
-            model.egePrograms.forEach(function (program) {
+            model.programs.forEach(function (program) {
                 if (program.level !== lvl) return;
                 var score = scoreOf(program, uni.key, studyType);
                 if (score === null) return;
@@ -175,7 +188,7 @@
 
         return '<div class="uni-item">' +
                  '<div class="uni-item-header">' +
-                   '<div class="uni-item-name">' + esc(uni.short) + " — " + esc(uni.full) + "</div>" +
+                   '<div class="uni-item-name">' + uniTitle(uni) + "</div>" +
                    '<div class="uni-item-info">' + info + "</div>" +
                  "</div>" +
                "</div>";
@@ -202,14 +215,14 @@
 
         return '<div class="uni-item">' +
                  '<div class="uni-item-header">' +
-                   '<div class="uni-item-name">' + esc(uni.short) + " — " + esc(uni.full) + "</div>" +
+                   '<div class="uni-item-name">' + uniTitle(uni) + "</div>" +
                    '<div class="uni-item-info">' +
                      "<span>Лучший балл: <strong>" + best + "</strong>" +
                      levelTag(matches[0].program.level) + "</span>" +
                      badgeHtml(best, total, bvi) +
                    "</div>" +
                  "</div>" +
-                 '<div class="uni-item-details">' + rows + "</div>" +
+                 '<div class="uni-item-details">' + uniFullRow(uni) + rows + "</div>" +
                "</div>";
     }
 
@@ -235,13 +248,14 @@
     function byDirectionCardHtml(uni, program, score, total, bvi) {
         return '<div class="uni-item">' +
                  '<div class="uni-item-header">' +
-                   '<div class="uni-item-name">' + esc(uni.short) + " — " + esc(uni.full) + "</div>" +
+                   '<div class="uni-item-name">' + uniTitle(uni) + "</div>" +
                    '<div class="uni-item-info">' +
                      "<span>Проходной балл: <strong>" + score + "</strong></span>" +
                      badgeHtml(score, total, bvi) +
                    "</div>" +
                  "</div>" +
                  '<div class="uni-item-details">' +
+                   uniFullRow(uni) +
                    '<div class="uni-detail-row"><strong>Направление:</strong> ' +
                      esc(program.code) + " " + esc(program.name) +
                      levelTag(program.level) + "</div>" +
@@ -267,7 +281,7 @@
         /* ── Режим «по направлениям» с выбранным направлением ── */
         if (pickMode === "directions" && selectedProgram) {
             var program = null;
-            model.egePrograms.forEach(function (p) {
+            model.programs.forEach(function (p) {
                 if (p.code === selectedProgram) program = p;
             });
             if (!program) { selectedProgram = null; renderCityPanel(model); return; }
@@ -308,7 +322,7 @@
 
             model.universities.forEach(function (uni) {
                 var matches = [];
-                model.egePrograms.forEach(function (program) {
+                model.programs.forEach(function (program) {
                     if (!matchesLevel(program, level)) return;
                     if (!window.programFitsSubjects(program, chosen)) return;
                     var score = scoreOf(program, uni.key, studyType);
@@ -352,7 +366,7 @@
 
         /* ── Обзор: ни предметы, ни направление не выбраны ── */
         } else {
-            var levelPrograms = model.egePrograms.filter(function (p) {
+            var levelPrograms = model.programs.filter(function (p) {
                 return matchesLevel(p, level);
             });
             html += '<div class="city-summary">' +
@@ -367,14 +381,6 @@
                 return overviewCardHtml(uni, model, studyType, level);
             }).join("");
 
-            /* Честно говорим, почему программ в панели меньше, чем в файле:
-               иначе число расходится с базой и выглядит как потеря данных. */
-            if (model.magistracyCount) {
-                html += '<div class="city-note">В базе есть ещё ' + model.magistracyCount + " " +
-                        plural(model.magistracyCount, "программа", "программы", "программ") +
-                        " магистратуры — " + plural(model.magistracyCount, "она", "они", "они") +
-                        " не показаны: приём туда идёт после диплома и по другим экзаменам.</div>";
-            }
         }
 
         list.innerHTML = html;
@@ -405,7 +411,7 @@
         if (!levelSelect || !dirSelect) return;
 
         var levels = [];
-        model.egePrograms.forEach(function (p) {
+        model.programs.forEach(function (p) {
             if (p.level && levels.indexOf(p.level) === -1) levels.push(p.level);
         });
         levels.sort(function (a, b) { return a.localeCompare(b, "ru"); });
@@ -427,7 +433,7 @@
         var byGroup = {};
         var order = [];
 
-        model.egePrograms.forEach(function (p) {
+        model.programs.forEach(function (p) {
             if (level && p.level !== level) return;
             var group = p.group || "Прочие направления";
             if (!byGroup[group]) { byGroup[group] = []; order.push(group); }
@@ -476,8 +482,8 @@
         var city = currentCity();
 
         /* Страница открыта как файл. Данные из data/ недоступны, поэтому
-           объясняем причину. Исключение — города, у которых подробной базы
-           нет и которые живут на заглушке uniData: она работает всегда. */
+           объясняем причину. Исключение — города, по которым базы нет вовсе:
+           у них и без данных есть что показать (заглушка из script.js). */
         if (location.protocol === "file:") {
             var onStandalone = !city || (window.CITY_REGISTRY && window.CITY_REGISTRY[city]);
             if (onStandalone) {
